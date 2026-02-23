@@ -643,8 +643,11 @@
           
           <div class="input-group">
             <label>Service</label>
-            <select id="keyService" onchange="validateKeyPattern()">
+            <select id="keyService" onchange="onServiceChange()">
               <option value="">Select service...</option>
+              <optgroup label="Social Media">
+                <option value="twitter">X (Twitter)</option>
+              </optgroup>
               <optgroup label="Cloud & Hosting">
                 <option value="aws">AWS</option>
                 <option value="render">Render</option>
@@ -699,10 +702,45 @@
             <input type="text" id="keyUrl" placeholder="e.g., https://project.supabase.co">
           </div>
           
-          <div class="input-group">
-            <label>Secret Value</label>
-            <input type="password" id="keyValue" placeholder="Paste your API key here" onkeyup="validateKeyPattern()">
-            <div class="key-validation" id="keyValidation"></div>
+          <!-- Dynamic credential fields container -->
+          <div id="dynamicFields">
+            <div class="input-group">
+              <label>Secret Value</label>
+              <input type="password" id="keyValue" placeholder="Paste your API key here" onkeyup="validateKeyPattern()">
+              <div class="key-validation" id="keyValidation"></div>
+            </div>
+          </div>
+          
+          <!-- X/Twitter specific fields (hidden by default) -->
+          <div id="twitterFields" style="display: none;">
+            <div class="input-group">
+              <label>OAuth 1.0a - API Key (Consumer Key)</label>
+              <input type="password" id="twitterApiKey" placeholder="Your API Key">
+            </div>
+            <div class="input-group">
+              <label>OAuth 1.0a - API Secret (Consumer Secret)</label>
+              <input type="password" id="twitterApiSecret" placeholder="Your API Secret">
+            </div>
+            <div class="input-group">
+              <label>OAuth 1.0a - Access Token</label>
+              <input type="password" id="twitterAccessToken" placeholder="Your Access Token">
+            </div>
+            <div class="input-group">
+              <label>OAuth 1.0a - Access Token Secret</label>
+              <input type="password" id="twitterAccessTokenSecret" placeholder="Your Access Token Secret">
+            </div>
+            <div class="input-group">
+              <label>OAuth 2.0 - Bearer Token</label>
+              <input type="password" id="twitterBearerToken" placeholder="Your Bearer Token">
+            </div>
+            <div class="input-group">
+              <label>Client ID (OAuth 2.0)</label>
+              <input type="password" id="twitterClientId" placeholder="Your Client ID">
+            </div>
+            <div class="input-group">
+              <label>Client Secret (OAuth 2.0)</label>
+              <input type="password" id="twitterClientSecret" placeholder="Your Client Secret">
+            </div>
           </div>
           
           <div class="input-group" style="display: flex; align-items: center; gap: 8px;">
@@ -788,6 +826,9 @@
     
     // Service display names
     const serviceDisplayNames = {
+      // Social Media
+      twitter: 'X (Twitter)',
+      
       // Cloud & Hosting
       aws: 'AWS',
       render: 'Render',
@@ -898,6 +939,25 @@
       }
       
       return isValid;
+    }
+    
+    // Handle service selection change
+    function onServiceChange() {
+      const service = document.getElementById('keyService').value;
+      const dynamicFields = document.getElementById('dynamicFields');
+      const twitterFields = document.getElementById('twitterFields');
+      
+      // Reset validation
+      validateKeyPattern();
+      
+      // Show/hide Twitter-specific fields
+      if (service === 'twitter') {
+        dynamicFields.style.display = 'none';
+        twitterFields.style.display = 'block';
+      } else {
+        dynamicFields.style.display = 'block';
+        twitterFields.style.display = 'none';
+      }
     }
     
     // Check vault status on load
@@ -1171,20 +1231,62 @@
       const name = document.getElementById('keyName').value;
       const service = document.getElementById('keyService').value;
       const url = document.getElementById('keyUrl').value;
-      const value = document.getElementById('keyValue').value;
       const autoShare = document.getElementById('autoShareKey').checked;
       
-      if (!name || !value) {
-        showAlert('Name and secret value are required', 'error');
+      if (!name) {
+        showAlert('Name is required', 'error');
         return;
       }
       
-      // Validate key pattern if service selected
-      if (service && !validateKeyPattern()) {
-        const validationDiv = document.getElementById('keyValidation');
-        validationDiv.className = 'key-validation invalid';
-        validationDiv.textContent = '⚠️ Key format doesn\'t match selected service. Please correct before saving.';
-        return;
+      let value;
+      let credentials = {};
+      
+      // Handle Twitter/X multi-field input
+      if (service === 'twitter') {
+        const apiKey = document.getElementById('twitterApiKey').value;
+        const apiSecret = document.getElementById('twitterApiSecret').value;
+        const accessToken = document.getElementById('twitterAccessToken').value;
+        const accessTokenSecret = document.getElementById('twitterAccessTokenSecret').value;
+        const bearerToken = document.getElementById('twitterBearerToken').value;
+        const clientId = document.getElementById('twitterClientId').value;
+        const clientSecret = document.getElementById('twitterClientSecret').value;
+        
+        // At least one credential required
+        if (!apiKey && !apiSecret && !accessToken && !accessTokenSecret && !bearerToken && !clientId && !clientSecret) {
+          showAlert('At least one Twitter credential is required', 'error');
+          return;
+        }
+        
+        // Store as JSON object with all credentials
+        credentials = {
+          apiKey,
+          apiSecret,
+          accessToken,
+          accessTokenSecret,
+          bearerToken,
+          clientId,
+          clientSecret
+        };
+        
+        // Create a summary for display
+        const filledFields = Object.entries(credentials).filter(([k, v]) => v).map(([k]) => k);
+        value = JSON.stringify({ ...credentials, _summary: `Twitter API (${filledFields.length} credentials)` });
+      } else {
+        // Standard single value
+        value = document.getElementById('keyValue').value;
+        
+        if (!value) {
+          showAlert('Secret value is required', 'error');
+          return;
+        }
+        
+        // Validate key pattern if service selected
+        if (service && !validateKeyPattern()) {
+          const validationDiv = document.getElementById('keyValidation');
+          validationDiv.className = 'key-validation invalid';
+          validationDiv.textContent = '⚠️ Key format doesn\'t match selected service. Please correct before saving.';
+          return;
+        }
       }
       
       try {
@@ -1204,12 +1306,26 @@
           }
           showAlert(message, result.autoShared ? 'success' : (autoShare ? 'warning' : 'success'));
           
+          // Clear all fields
           document.getElementById('keyName').value = '';
           document.getElementById('keyService').value = '';
           document.getElementById('keyUrl').value = '';
           document.getElementById('keyValue').value = '';
           document.getElementById('autoShareKey').checked = false;
           document.getElementById('keyValidation').style.display = 'none';
+          
+          // Clear Twitter fields
+          document.getElementById('twitterApiKey').value = '';
+          document.getElementById('twitterApiSecret').value = '';
+          document.getElementById('twitterAccessToken').value = '';
+          document.getElementById('twitterAccessTokenSecret').value = '';
+          document.getElementById('twitterBearerToken').value = '';
+          document.getElementById('twitterClientId').value = '';
+          document.getElementById('twitterClientSecret').value = '';
+          
+          // Reset field visibility
+          onServiceChange();
+          
           toggleAddForm();
           loadKeys();
         } else {
