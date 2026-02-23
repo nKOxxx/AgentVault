@@ -637,14 +637,52 @@
             <label>Service</label>
             <select id="keyService" onchange="validateKeyPattern()">
               <option value="">Select service...</option>
-              <option value="supabase">Supabase</option>
-              <option value="stripe">Stripe</option>
-              <option value="github">GitHub</option>
-              <option value="aws">AWS</option>
-              <option value="redis">Redis</option>
-              <option value="sendgrid">SendGrid</option>
-              <option value="openai">OpenAI</option>
-              <option value="other">Other</option>
+              <optgroup label="Cloud & Hosting">
+                <option value="aws">AWS</option>
+                <option value="render">Render</option>
+                <option value="vercel">Vercel</option>
+                <option value="cloudflare">Cloudflare</option>
+                <option value="digitalocean">DigitalOcean</option>
+                <option value="firebase">Firebase</option>
+              </optgroup>
+              <optgroup label="Databases">
+                <option value="supabase">Supabase</option>
+                <option value="postgres">PostgreSQL</option>
+                <option value="mysql">MySQL</option>
+                <option value="mongodb">MongoDB</option>
+                <option value="redis">Redis</option>
+              </optgroup>
+              <optgroup label="AI & LLMs">
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic (Claude)</option>
+                <option value="moonshot">Moonshot (Kimi)</option>
+                <option value="elevenlabs">ElevenLabs</option>
+                <option value="deepgram">Deepgram</option>
+              </optgroup>
+              <optgroup label="Our Products">
+                <option value="moltbook">Moltbook</option>
+                <option value="aresos">AresOS</option>
+                <option value="agentvault">AgentVault</option>
+                <option value="agentdiplomacy">AgentDiplomacy</option>
+                <option value="memorybridge">MemoryBridge</option>
+              </optgroup>
+              <optgroup label="Communication">
+                <option value="telegram">Telegram</option>
+                <option value="slack">Slack</option>
+                <option value="discord">Discord</option>
+                <option value="twilio">Twilio</option>
+                <option value="sendgrid">SendGrid</option>
+              </optgroup>
+              <optgroup label="Dev Tools">
+                <option value="github">GitHub</option>
+                <option value="google">Google APIs</option>
+                <option value="notion">Notion</option>
+                <option value="figma">Figma</option>
+              </optgroup>
+              <optgroup label="Other">
+                <option value="stripe">Stripe</option>
+                <option value="other">Other</option>
+              </optgroup>
             </select>
           </div>
           
@@ -704,13 +742,89 @@
     
     // Key patterns by service
     const keyPatterns = {
-      supabase: /^sb_[a-z]+_[A-Za-z0-9]{40,}$/,
-      stripe: /^sk_(live|test)_[A-Za-z0-9]{24,}$/,
-      github: /^ghp_[A-Za-z0-9]{36}$|^gho_[A-Za-z0-9]{36}$/,
-      openai: /^sk-[A-Za-z0-9]{32,}$/,
+      // Cloud & Hosting
       aws: /^AKIA[A-Z0-9]{16}$/,
+      render: /^rnd_[a-zA-Z0-9]{25,}$/,
+      vercel: /^[a-zA-Z0-9]{24}$/,
+      cloudflare: /^[a-f0-9]{37}$/,
+      digitalocean: /^dop_v1_[a-f0-9]{64}$/,
+      firebase: /^AIza[0-9A-Za-z_-]{35}$/,
+      
+      // Databases
+      supabase: /^sb_[a-z]+_[A-Za-z0-9]{40,}$/,
+      postgres: /^postgres:\/\//,
+      mysql: /^mysql:\/\//,
+      mongodb: /^mongodb(\+srv)?:\/\//,
+      redis: /^rediss?:\/\//,
+      
+      // AI & LLMs
+      openai: /^sk-[A-Za-z0-9]{32,}$/,
+      anthropic: /^sk-ant-[a-zA-Z0-9]{48,}$/,
+      moonshot: /^[a-f0-9]{32}$/,
+      elevenlabs: /^[a-f0-9]{32}$/,
+      deepgram: /^[a-f0-9]{32}$/,
+      
+      // Communication
+      telegram: /^[0-9]{8,10}:[A-Za-z0-9_-]{35}$/,
+      slack: /^xox[baprs]-[0-9]{10,13}-[0-9]{10,13}(-[a-zA-Z0-9]{24})?$/,
+      discord: /^[A-Za-z0-9_-]{20,30}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27}$/,
+      twilio: /^SK[0-9a-f]{32}$|^AC[0-9a-f]{32}$/,
       sendgrid: /^SG\.[A-Za-z0-9]{22}\.[A-Za-z0-9]{43}$/,
-      redis: /^rediss?:\/\//
+      
+      // Dev Tools
+      github: /^ghp_[A-Za-z0-9]{36}$|^gho_[A-Za-z0-9]{36}$|^github_pat_[A-Za-z0-9]{22}_[A-Za-z0-9]{59}$/,
+      google: /^AIza[0-9A-Za-z_-]{35}$/,
+      notion: /^secret_[A-Za-z0-9]{43}$/,
+      figma: /^figd_[A-Za-z0-9]{40}$/
+    };
+    
+    // Service display names
+    const serviceDisplayNames = {
+      // Cloud & Hosting
+      aws: 'AWS',
+      render: 'Render',
+      vercel: 'Vercel',
+      cloudflare: 'Cloudflare',
+      digitalocean: 'DigitalOcean',
+      firebase: 'Firebase',
+      
+      // Databases
+      supabase: 'Supabase',
+      postgres: 'PostgreSQL',
+      mysql: 'MySQL',
+      mongodb: 'MongoDB',
+      redis: 'Redis',
+      
+      // AI & LLMs
+      openai: 'OpenAI',
+      anthropic: 'Anthropic',
+      moonshot: 'Moonshot',
+      elevenlabs: 'ElevenLabs',
+      deepgram: 'Deepgram',
+      
+      // Our Products
+      moltbook: 'Moltbook',
+      aresos: 'AresOS',
+      agentvault: 'AgentVault',
+      agentdiplomacy: 'AgentDiplomacy',
+      memorybridge: 'MemoryBridge',
+      
+      // Communication
+      telegram: 'Telegram',
+      slack: 'Slack',
+      discord: 'Discord',
+      twilio: 'Twilio',
+      sendgrid: 'SendGrid',
+      
+      // Dev Tools
+      github: 'GitHub',
+      google: 'Google APIs',
+      notion: 'Notion',
+      figma: 'Figma',
+      
+      // Other
+      stripe: 'Stripe',
+      other: 'Other'
     };
     
     // Check password strength
@@ -765,13 +879,14 @@
       }
       
       const isValid = pattern.test(value);
+      const serviceDisplay = serviceDisplayNames[service] || service;
       
       if (isValid) {
         validationDiv.className = 'key-validation valid';
-        validationDiv.textContent = `✓ Valid ${service} key format`;
+        validationDiv.textContent = `✓ Valid ${serviceDisplay} key format`;
       } else {
         validationDiv.className = 'key-validation invalid';
-        validationDiv.textContent = `⚠️ This doesn't look like a ${service} key. Wrong format or wrong service selected.`;
+        validationDiv.textContent = `⚠️ This doesn't look like a ${serviceDisplay} key. Wrong format or wrong service selected.`;
       }
       
       return isValid;
@@ -925,6 +1040,8 @@
         const shareBtnText = key.is_shared ? 'Share Again' : 'Share with Ares';
         const shareBtnClass = key.is_shared ? 'btn-share shared' : 'btn-share';
         
+        const serviceName = serviceDisplayNames[key.service] || key.service || 'Other';
+        
         return `
           <div class="key-item ${warningClass} ${sharedClass}">
             <div class="key-header">
@@ -933,7 +1050,7 @@
                 ${shareStatus}
                 ${warningBadge}
               </div>
-              <span class="key-service">${key.service || 'other'}</span>
+              <span class="key-service">${serviceName}</span>
             </div>
             <div class="key-meta">
               ${key.url ? `🔗 ${key.url}<br>` : ''}
