@@ -48,6 +48,7 @@ function validateInput(fields) {
     next();
   };
 }
+
 const rateLimits = new Map();
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
 const RATE_LIMIT_MAX = 5; // 5 attempts per window
@@ -109,8 +110,16 @@ function initDB() {
       encrypted_value TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       last_rotated DATETIME DEFAULT CURRENT_TIMESTAMP,
-      rotation_interval INTEGER DEFAULT 90
+      rotation_interval INTEGER DEFAULT 90,
+      shared_with TEXT DEFAULT NULL
     )`);
+    
+    // Migration: Add shared_with column if it doesn't exist
+    db.run(`ALTER TABLE keys ADD COLUMN shared_with TEXT DEFAULT NULL`, (err) => {
+      if (err && !err.message.includes('duplicate column')) {
+        console.log('Note: shared_with column may already exist');
+      }
+    });
   });
 }
 
@@ -181,7 +190,7 @@ function unlockVault(password) {
 // Get all keys
 function getKeys() {
   return new Promise((resolve, reject) => {
-    db.all("SELECT id, name, service, url, created_at, last_rotated, rotation_interval FROM keys ORDER BY created_at DESC", (err, rows) => {
+    db.all("SELECT id, name, service, url, created_at, last_rotated, rotation_interval, shared_with FROM keys ORDER BY created_at DESC", (err, rows) => {
       if (err) reject(err);
       resolve(rows);
     });
@@ -227,6 +236,20 @@ function getKeyValue(id) {
   });
 }
 
+// Mark key as shared
+function markKeyShared(id, agentName = 'Ares') {
+  return new Promise((resolve, reject) => {
+    db.run(
+      "UPDATE keys SET shared_with = ? WHERE id = ?",
+      [agentName, id],
+      function(err) {
+        if (err) reject(err);
+        resolve();
+      }
+    );
+  });
+}
+
 // Delete key
 function deleteKey(id) {
   return new Promise((resolve, reject) => {
@@ -260,6 +283,7 @@ function countKeys() {
 // WebSocket server for OpenClaw connection
 const wss = new WebSocket.Server({ port: WS_PORT });
 let openclawClient = null;
+let pendingShares = new Map(); // Track pending shares
 
 wss.on('connection', (ws) => {
   console.log('🔌 OpenClaw connected via WebSocket');
@@ -285,6 +309,17 @@ wss.on('connection', (ws) => {
           }));
         });
       }
+      
+      // Handle confirmation that key was received
+      if (data.type === 'key_received') {
+        console.log(`✅ Key received by agent: ${data.keyName}`);
+        // Mark key as shared in database
+        if (data.keyId) {
+          markKeyShared(data.keyId, data.agentName || 'Ares').catch(console.error);
+        }
+        // Remove from pending
+        pendingShares.delete(data.keyId);
+      }
     } catch (e) {
       console.error('Invalid message from OpenClaw:', e);
     }
@@ -297,21 +332,71 @@ wss.on('connection', (ws) => {
 });
 
 // Share key to OpenClaw
-function shareToOpenClaw(keyData) {
+async function shareToOpenClaw(keyData, keyId) {
   return new Promise((resolve, reject) => {
     if (!openclawClient) {
-      reject(new Error('OpenClaw not connected'));
+      reject(new Error('Ares not connected. Please wait for connection or refresh the page.'));
       return;
     }
     
+    // Track pending share
+    pendingShares.set(keyId, {
+      timestamp: Date.now(),
+      retries: 0
+    });
+    
     openclawClient.send(JSON.stringify({
       type: 'shared_secret',
+      keyId: keyId,
       timestamp: new Date().toISOString(),
       data: keyData
     }));
     
-    resolve();
+    // Wait for confirmation with timeout
+    const checkInterval = setInterval(() => {
+      const pending = pendingShares.get(keyId);
+      if (!pending) {
+        // Key was received
+        clearInterval(checkInterval);
+        resolve();
+      } else if (Date.now() - pending.timestamp > 10000) {
+        // Timeout after 10 seconds
+        clearInterval(checkInterval);
+        pendingShares.delete(keyId);
+        reject(new Error('Timeout: Ares did not confirm receipt within 10 seconds'));
+      }
+    }, 500);
   });
+}
+
+// Share all unshared keys
+async function shareAllUnshared() {
+  if (!openclawClient) {
+    throw new Error('Ares not connected');
+  }
+  
+  const keys = await getKeys();
+  const unsharedKeys = keys.filter(k => !k.shared_with);
+  
+  const results = {
+    total: unsharedKeys.length,
+    success: 0,
+    failed: 0,
+    errors: []
+  };
+  
+  for (const key of unsharedKeys) {
+    try {
+      const keyData = await getKeyValue(key.id);
+      await shareToOpenClaw(keyData, key.id);
+      results.success++;
+    } catch (e) {
+      results.failed++;
+      results.errors.push(`${key.name}: ${e.message}`);
+    }
+  }
+  
+  return results;
 }
 
 // Routes
@@ -324,12 +409,15 @@ app.get('/api/status', async (req, res) => {
     const initialized = await isVaultInitialized();
     const unlocked = encryptionKey !== null;
     const keyCount = unlocked ? await countKeys() : 0;
+    const connected = openclawClient !== null;
     
     res.json({
       initialized,
       unlocked,
       keyCount,
-      maxKeys
+      maxKeys,
+      connected,
+      agentName: 'Ares'
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -382,7 +470,9 @@ app.get('/api/keys', async (req, res) => {
         ...key,
         days_since_rotation: daysSinceRotation,
         days_until_rotation: daysUntilRotation,
-        needs_rotation: daysUntilRotation <= 7
+        needs_rotation: daysUntilRotation <= 7,
+        is_shared: !!key.shared_with,
+        shared_with: key.shared_with
       };
     });
     
@@ -403,7 +493,7 @@ app.post('/api/keys', validateInput(['name', 'service', 'url', 'value']), async 
       return res.status(400).json({ error: `Maximum ${maxKeys} keys allowed` });
     }
     
-    const { name, service, url, value } = req.body;
+    const { name, service, url, value, autoShare } = req.body;
     if (!name || !value) {
       return res.status(400).json({ error: 'Name and value required' });
     }
@@ -414,7 +504,20 @@ app.post('/api/keys', validateInput(['name', 'service', 'url', 'value']), async 
     }
     
     const id = await addKey(name, service, url, value);
-    res.json({ id, success: true });
+    
+    // Auto-share if requested and connected
+    let shared = false;
+    if (autoShare && openclawClient) {
+      try {
+        const keyData = await getKeyValue(id);
+        await shareToOpenClaw(keyData, id);
+        shared = true;
+      } catch (e) {
+        console.log('Auto-share failed:', e.message);
+      }
+    }
+    
+    res.json({ id, success: true, autoShared: shared });
   } catch (e) {
     console.error('Add key error:', e);
     res.status(500).json({ error: 'Failed to add key' });
@@ -428,9 +531,22 @@ app.post('/api/keys/:id/share', async (req, res) => {
     }
     
     const keyData = await getKeyValue(req.params.id);
-    await shareToOpenClaw(keyData);
+    await shareToOpenClaw(keyData, req.params.id);
     
-    res.json({ success: true, message: 'Shared with OpenClaw' });
+    res.json({ success: true, message: 'Shared with Ares' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/keys/share-all', async (req, res) => {
+  try {
+    if (!encryptionKey) {
+      return res.status(401).json({ error: 'Vault locked' });
+    }
+    
+    const results = await shareAllUnshared();
+    res.json({ success: true, ...results });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -547,12 +663,4 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('   Open http://localhost:8765 in your browser');
   console.log('');
-});
-
-// Handle graceful shutdown
-process.on('SIGINT', () => {
-  console.log('\n🔒 Locking vault and shutting down...');
-  encryptionKey = null;
-  db.close();
-  process.exit(0);
 });
