@@ -593,19 +593,27 @@
       
       <!-- Unlock Screen -->
       <div class="unlock-screen" id="unlockScreen">
-        <h2 style="margin-bottom: 20px; color: #333;">Unlock Vault</h2>
+        <div style="text-align: center; margin-bottom: 25px;">
+          <div style="font-size: 48px; margin-bottom: 10px;">🔒</div>
+          <h2 style="color: #333;">Vault Locked</h2>
+          <p style="color: #666; font-size: 14px; margin-top: 8px;">Enter your master password to unlock</p>
+        </div>
         
         <div class="input-group">
           <label>Master Password</label>
-          <input type="password" id="unlockPassword" placeholder="Enter your password">
+          <input type="password" id="unlockPassword" placeholder="Enter your password" onkeypress="handleUnlockKeypress(event)">
         </div>
         
-        <button class="btn btn-primary" onclick="unlockVault()">Unlock</button>
+        <button class="btn btn-primary" id="unlockBtn" onclick="unlockVault()">🔓 Unlock Vault</button>
         
         <div class="progress-bar" style="margin-top: 20px;">
           <div class="progress-fill" id="keyCountBar" style="width: 0%"></div>
         </div>
         <p class="info-text" id="keyCountText">0 / 20 keys stored</p>
+        
+        <button class="btn btn-secondary" onclick="resetVault()" style="margin-top: 20px; font-size: 12px;">
+          ⚠️ Reset Vault (Delete All Data)
+        </button>
       </div>
       
       <!-- Vault Screen -->
@@ -718,7 +726,7 @@
           <!-- Keys will be loaded here -->
         </div>
         
-        <button class="btn btn-secondary" onclick="lockVault()" style="margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="lockVault()" style="margin-top: 20px; border: 2px solid #667eea;">
           🔒 Lock Vault
         </button>
       </div>
@@ -903,6 +911,11 @@
         } else if (!status.unlocked) {
           showScreen('unlock');
           updateKeyCount(status.keyCount, status.maxKeys);
+          // Focus password field
+          setTimeout(() => {
+            const passwordField = document.getElementById('unlockPassword');
+            if (passwordField) passwordField.focus();
+          }, 100);
         } else {
           showScreen('vault');
           loadKeys();
@@ -969,8 +982,25 @@
       }
     }
     
+    function handleUnlockKeypress(event) {
+      if (event.key === 'Enter') {
+        unlockVault();
+      }
+    }
+    
     async function unlockVault() {
       const password = document.getElementById('unlockPassword').value;
+      const btn = document.getElementById('unlockBtn');
+      
+      if (!password) {
+        showAlert('Please enter your password', 'error');
+        return;
+      }
+      
+      // Show loading state
+      const originalText = btn.textContent;
+      btn.textContent = '🔓 Unlocking...';
+      btn.disabled = true;
       
       try {
         const response = await fetch('/api/unlock', {
@@ -983,16 +1013,82 @@
           showScreen('vault');
           loadKeys();
           connectWebSocket();
+          showAlert('✅ Vault unlocked successfully', 'success');
         } else {
-          showAlert('Invalid password', 'error');
+          const error = await response.json();
+          showAlert(error.error || 'Invalid password', 'error');
+          btn.textContent = originalText;
+          btn.disabled = false;
         }
       } catch (e) {
-        showAlert('Failed to unlock vault', 'error');
+        showAlert('❌ Failed to unlock vault', 'error');
+        btn.textContent = originalText;
+        btn.disabled = false;
       }
     }
     
-    function lockVault() {
-      location.reload();
+    async function resetVault() {
+      if (!confirm('⚠️ WARNING: This will DELETE ALL KEYS and reset the vault.\n\nThis action cannot be undone.\n\nAre you sure?')) {
+        return;
+      }
+      
+      if (!confirm('Final confirmation: ALL YOUR KEYS WILL BE LOST FOREVER.\n\nType "DELETE" to confirm:')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+          showAlert('Vault reset. Please refresh the page.', 'success');
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          showAlert('Failed to reset vault', 'error');
+        }
+      } catch (e) {
+        showAlert('Failed to reset vault', 'error');
+      }
+    }
+    
+    async function lockVault() {
+      try {
+        // Call server to clear encryption key from memory
+        const response = await fetch('/api/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+          // Close WebSocket
+          if (ws) {
+            ws.close();
+            ws = null;
+          }
+          
+          // Clear any sensitive data
+          keys = [];
+          
+          // Show unlock screen
+          showScreen('unlock');
+          
+          // Clear password field
+          const passwordField = document.getElementById('unlockPassword');
+          if (passwordField) {
+            passwordField.value = '';
+            passwordField.focus();
+          }
+          
+          showAlert('🔒 Vault locked successfully', 'success');
+        } else {
+          showAlert('❌ Failed to lock vault', 'error');
+        }
+      } catch (e) {
+        console.error('Lock vault error:', e);
+        showAlert('❌ Failed to lock vault', 'error');
+      }
     }
     
     async function loadKeys() {
