@@ -636,7 +636,7 @@ app.get('/api/ws-token', async (req, res) => {
 
 app.get('/api/status', async (req, res) => {
   try {
-    const initialized = await isVaultInitialized();
+    const initialized = await isVaultInitialized() || false;
     const unlocked = encryptionKey !== null;
     const keyCount = unlocked ? await countKeys() : 0;
     const connected = openclawClient !== null && authenticatedClients.has(openclawClient);
