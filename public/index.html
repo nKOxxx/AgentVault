@@ -1086,12 +1086,19 @@
       btn.textContent = '🔓 Unlocking...';
       btn.disabled = true;
       
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
       try {
         const response = await fetch('/api/unlock', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password })
+          body: JSON.stringify({ password }),
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         
         if (response.ok) {
           showScreen('vault');
@@ -1100,12 +1107,17 @@
           showAlert('✅ Vault unlocked successfully', 'success');
         } else {
           const error = await response.json();
-          showAlert(error.error || 'Invalid password', 'error');
+          showAlert('❌ ' + (error.error || 'Invalid password'), 'error');
           btn.textContent = originalText;
           btn.disabled = false;
         }
       } catch (e) {
-        showAlert('❌ Failed to unlock vault', 'error');
+        clearTimeout(timeoutId);
+        if (e.name === 'AbortError') {
+          showAlert('❌ Request timed out. Server may be busy.', 'error');
+        } else {
+          showAlert('❌ Failed to unlock vault: ' + e.message, 'error');
+        }
         btn.textContent = originalText;
         btn.disabled = false;
       }
@@ -1138,12 +1150,23 @@
     }
     
     async function lockVault() {
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = '🔒 Locking...';
+      btn.disabled = true;
+      
       try {
         // Call server to clear encryption key from memory
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
         const response = await fetch('/api/logout', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         
         if (response.ok) {
           // Close WebSocket
@@ -1168,10 +1191,14 @@
           showAlert('🔒 Vault locked successfully', 'success');
         } else {
           showAlert('❌ Failed to lock vault', 'error');
+          btn.textContent = originalText;
+          btn.disabled = false;
         }
       } catch (e) {
         console.error('Lock vault error:', e);
-        showAlert('❌ Failed to lock vault', 'error');
+        showAlert('❌ Failed to lock vault: ' + e.message, 'error');
+        btn.textContent = originalText;
+        btn.disabled = false;
       }
     }
     
