@@ -1022,10 +1022,19 @@
       const confirm = document.getElementById('confirmPassword').value;
       
       console.log('Password entered:', password ? 'yes' : 'no');
-      console.log('Password valid:', passwordValid);
       
-      if (!passwordValid) {
-        showAlert('Password does not meet requirements. Please check all criteria.', 'error');
+      // Validate password requirements
+      const lengthValid = patterns.length.test(password);
+      const upperValid = patterns.upper.test(password);
+      const lowerValid = patterns.lower.test(password);
+      const numberValid = patterns.number.test(password);
+      const symbolValid = patterns.symbol.test(password);
+      const allValid = lengthValid && upperValid && lowerValid && numberValid && symbolValid;
+      
+      console.log('Validation:', {lengthValid, upperValid, lowerValid, numberValid, symbolValid, allValid});
+      
+      if (!allValid) {
+        showAlert('Password does not meet requirements. Need: 8+ chars, uppercase, lowercase, number, symbol.', 'error');
         return;
       }
       
