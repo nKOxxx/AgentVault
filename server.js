@@ -83,12 +83,13 @@ function validateInput(fields) {
     for (const field of fields) {
       const value = req.body[field];
       if (value !== undefined) {
-        // Check for common injection patterns
-        if (typeof value === 'string' && /[<>'"]|(\-\-)|(;)|(\/\*)/.test(value)) {
+        // Check for dangerous SQL injection patterns only
+        // Allow common API key characters: - _ . / = + etc.
+        if (typeof value === 'string' && /(\-\-)|(;)|(\/\*)|(\*\/)/.test(value)) {
           return res.status(400).json({ error: 'Invalid characters in input' });
         }
         // Length limits
-        if (typeof value === 'string' && value.length > 1000) {
+        if (typeof value === 'string' && value.length > 2000) {
           return res.status(400).json({ error: 'Input too long' });
         }
       }
