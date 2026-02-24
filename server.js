@@ -1,10 +1,16 @@
 const express = require('express');
 const WebSocket = require('ws');
-const CryptoJS = require('crypto-js');
+const crypto = require('crypto');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 const bodyParser = require('body-parser');
+
+// Security: Use Node native crypto (AES-256-GCM)
+const ALGORITHM = 'aes-256-gcm';
+const IV_LENGTH = 16;
+const AUTH_TAG_LENGTH = 16;
+const KEY_LENGTH = 32;
 
 const app = express();
 const PORT = 8765;
@@ -89,9 +95,60 @@ function rateLimitMiddleware(req, res, next) {
 
 // Database setup
 const DB_PATH = path.join(__dirname, 'vault.db');
+const AUDIT_LOG_PATH = path.join(__dirname, 'audit.log');
 let db;
 let encryptionKey = null;
 let maxKeys = 20;
+
+// ============================================
+// AUDIT LOGGING
+// ============================================
+
+/**
+ * Log security events to audit log
+ * @param {string} event - Event type (unlock, key_added, key_accessed, etc.)
+ * @param {object} details - Event details
+ */
+function logAudit(event, details = {}) {
+  const timestamp = new Date().toISOString();
+  const logEntry = {
+    timestamp,
+    event,
+    ...details
+  };
+  
+  // Append to audit log file
+  fs.appendFileSync(AUDIT_LOG_PATH, JSON.stringify(logEntry) + '\n');
+  
+  // Also log to console for visibility
+  console.log(`[AUDIT] ${event}:`, JSON.stringify(details));
+}
+
+/**
+ * Get recent audit events
+ * @param {number} limit - Number of events to return
+ * @returns {Array} Audit events
+ */
+function getAuditLog(limit = 100) {
+  if (!fs.existsSync(AUDIT_LOG_PATH)) {
+    return [];
+  }
+  
+  const lines = fs.readFileSync(AUDIT_LOG_PATH, 'utf8')
+    .trim()
+    .split('\n')
+    .filter(line => line)
+    .map(line => {
+      try {
+        return JSON.parse(line);
+      } catch (e) {
+        return null;
+      }
+    })
+    .filter(entry => entry !== null);
+  
+  return lines.slice(-limit);
+}
 
 // Initialize database
 function initDB() {
@@ -123,14 +180,70 @@ function initDB() {
   });
 }
 
-// Encryption functions
-function encrypt(text, key) {
-  return CryptoJS.AES.encrypt(text, key).toString();
+// ============================================
+// ENCRYPTION (Node Native Crypto - AES-256-GCM)
+// ============================================
+
+/**
+ * Encrypt text using AES-256-GCM
+ * @param {string} text - Plaintext to encrypt
+ * @param {string} keyHex - Encryption key as hex string
+ * @returns {string} Encrypted data as hex string (iv + ciphertext + authTag)
+ */
+function encrypt(text, keyHex) {
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const key = Buffer.from(keyHex, 'hex');
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+  
+  let ciphertext = cipher.update(text, 'utf8', 'hex');
+  ciphertext += cipher.final('hex');
+  
+  const authTag = cipher.getAuthTag();
+  
+  // Store as: iv + authTag + ciphertext
+  return iv.toString('hex') + authTag.toString('hex') + ciphertext;
 }
 
-function decrypt(ciphertext, key) {
-  const bytes = CryptoJS.AES.decrypt(ciphertext, key);
-  return bytes.toString(CryptoJS.enc.Utf8);
+/**
+ * Decrypt ciphertext using AES-256-GCM
+ * @param {string} encryptedHex - Encrypted data as hex string
+ * @param {string} keyHex - Encryption key as hex string
+ * @returns {string} Decrypted plaintext
+ */
+function decrypt(encryptedHex, keyHex) {
+  const encrypted = Buffer.from(encryptedHex, 'hex');
+  
+  // Extract components
+  const iv = encrypted.slice(0, IV_LENGTH);
+  const authTag = encrypted.slice(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH);
+  const ciphertext = encrypted.slice(IV_LENGTH + AUTH_TAG_LENGTH);
+  
+  const key = Buffer.from(keyHex, 'hex');
+  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+  decipher.setAuthTag(authTag);
+  
+  let plaintext = decipher.update(ciphertext, undefined, 'utf8');
+  plaintext += decipher.final('utf8');
+  
+  return plaintext;
+}
+
+/**
+ * Derive encryption key from password using PBKDF2
+ * @param {string} password - User password
+ * @param {string} salt - Salt (hex string)
+ * @returns {string} Derived key as hex string
+ */
+function deriveKey(password, salt) {
+  return crypto.pbkdf2Sync(password, salt, 100000, KEY_LENGTH, 'sha256').toString('hex');
+}
+
+/**
+ * Generate random salt
+ * @returns {string} Random salt as hex string
+ */
+function generateSalt() {
+  return crypto.randomBytes(16).toString('hex');
 }
 
 // Check if vault is initialized
@@ -146,8 +259,8 @@ function isVaultInitialized() {
 // Initialize vault with master password
 function initializeVault(password) {
   return new Promise((resolve, reject) => {
-    const salt = CryptoJS.lib.WordArray.random(128/8).toString();
-    const key = CryptoJS.PBKDF2(password, salt, { keySize: 256/32, iterations: 100000 }).toString();
+    const salt = generateSalt();
+    const key = deriveKey(password, salt);
     
     db.run("INSERT OR REPLACE INTO vault_meta (key, value) VALUES (?, ?)", ['salt', salt], (err) => {
       if (err) reject(err);
@@ -168,7 +281,7 @@ function unlockVault(password) {
       if (!row) reject(new Error('Vault not initialized'));
       
       const salt = row.value;
-      const key = CryptoJS.PBKDF2(password, salt, { keySize: 256/32, iterations: 100000 }).toString();
+      const key = deriveKey(password, salt);
       
       // Test decryption
       db.get("SELECT encrypted_value FROM keys LIMIT 1", (err, testRow) => {
@@ -200,7 +313,7 @@ function getKeys() {
 // Add key
 function addKey(name, service, url, value) {
   return new Promise((resolve, reject) => {
-    const id = CryptoJS.lib.WordArray.random(128/8).toString();
+    const id = crypto.randomBytes(16).toString('hex');
     const encrypted = encrypt(value, encryptionKey);
     
     db.run(
@@ -505,6 +618,15 @@ app.post('/api/keys', validateInput(['name', 'service', 'url', 'value']), async 
     
     const id = await addKey(name, service, url, value);
     
+    // Log key addition
+    logAudit('key_added', {
+      keyId: id,
+      keyName: name,
+      service: service,
+      autoShared: autoShare,
+      timestamp: new Date().toISOString()
+    });
+    
     // Auto-share if requested and connected
     let shared = false;
     if (autoShare && openclawClient) {
@@ -533,6 +655,14 @@ app.post('/api/keys/:id/share', async (req, res) => {
     const keyData = await getKeyValue(req.params.id);
     await shareToOpenClaw(keyData, req.params.id);
     
+    // Log key sharing
+    logAudit('key_shared', {
+      keyId: req.params.id,
+      keyName: keyData.name,
+      sharedWith: 'Ares',
+      timestamp: new Date().toISOString()
+    });
+    
     res.json({ success: true, message: 'Shared with Ares' });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -559,6 +689,13 @@ app.delete('/api/keys/:id', async (req, res) => {
     }
     
     await deleteKey(req.params.id);
+    
+    // Log key deletion
+    logAudit('key_deleted', {
+      keyId: req.params.id,
+      timestamp: new Date().toISOString()
+    });
+    
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -567,8 +704,33 @@ app.delete('/api/keys/:id', async (req, res) => {
 
 // Logout (clear encryption key from memory)
 app.post('/api/logout', (req, res) => {
+  // Log logout
+  logAudit('vault_locked', {
+    action: 'user_logout',
+    timestamp: new Date().toISOString()
+  });
+  
   encryptionKey = null;
   res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// Get audit log
+app.get('/api/audit', async (req, res) => {
+  try {
+    if (!encryptionKey) {
+      return res.status(401).json({ error: 'Vault locked' });
+    }
+    
+    const limit = parseInt(req.query.limit) || 50;
+    const logs = getAuditLog(limit);
+    
+    res.json({
+      count: logs.length,
+      logs
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // Reset - delete all vault data
