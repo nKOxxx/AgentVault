@@ -562,7 +562,7 @@
           <input type="password" id="confirmPassword" placeholder="Confirm your password">
         </div>
         
-        <button class="btn btn-primary" onclick="initializeVault()">Create Vault</button>
+        <button class="btn btn-primary" id="createVaultBtn" onclick="initializeVault()">Create Vault</button>
         
         <div class="info-text">
           <strong>🔒 Security:</strong> Your password is used to encrypt all data.
@@ -962,13 +962,17 @@
     
     // Check vault status on load
     async function checkStatus() {
+      console.log('checkStatus called');
       try {
         const response = await fetch('/api/status');
         const status = await response.json();
+        console.log('Status:', status);
         
         if (!status.initialized) {
+          console.log('Showing setup screen');
           showScreen('setup');
         } else if (!status.unlocked) {
+          console.log('Showing unlock screen');
           showScreen('unlock');
           updateKeyCount(status.keyCount, status.maxKeys);
           // Focus password field
@@ -977,11 +981,13 @@
             if (passwordField) passwordField.focus();
           }, 100);
         } else {
+          console.log('Showing vault screen');
           showScreen('vault');
           loadKeys();
           connectWebSocket();
         }
       } catch (e) {
+        console.error('checkStatus error:', e);
         showAlert('Failed to connect to AgentVault server', 'error');
       }
     }
@@ -1011,8 +1017,12 @@
     }
     
     async function initializeVault() {
+      console.log('initializeVault called');
       const password = document.getElementById('setupPassword').value;
       const confirm = document.getElementById('confirmPassword').value;
+      
+      console.log('Password entered:', password ? 'yes' : 'no');
+      console.log('Password valid:', passwordValid);
       
       if (!passwordValid) {
         showAlert('Password does not meet requirements. Please check all criteria.', 'error');
@@ -1024,6 +1034,7 @@
         return;
       }
       
+      console.log('Sending init request...');
       try {
         const response = await fetch('/api/init', {
           method: 'POST',
@@ -1031,14 +1042,18 @@
           body: JSON.stringify({ password })
         });
         
+        console.log('Response:', response.status);
+        
         if (response.ok) {
+          console.log('Vault created, showing connect screen');
           showScreen('connect');
         } else {
           const error = await response.json();
           showAlert(error.error, 'error');
         }
       } catch (e) {
-        showAlert('Failed to create vault', 'error');
+        console.error('Error:', e);
+        showAlert('Failed to create vault: ' + e.message, 'error');
       }
     }
     
@@ -1480,6 +1495,24 @@
     
     // Initialize
     checkStatus();
+    
+    // Fallback button handler for create vault
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM loaded, attaching fallback handlers');
+      const createBtn = document.getElementById('createVaultBtn');
+      if (createBtn) {
+        console.log('Create vault button found');
+        createBtn.addEventListener('click', function(e) {
+          console.log('Create vault button clicked (fallback)');
+          e.preventDefault();
+          e.stopPropagation();
+          initializeVault();
+          return false;
+        });
+      } else {
+        console.log('Create vault button NOT found');
+      }
+    });
   </script>
 </body>
 </html>
