@@ -13,8 +13,26 @@ const AUTH_TAG_LENGTH = 16;
 const KEY_LENGTH = 32;
 
 const app = express();
-const PORT = 8765;
-const WS_PORT = 8766;
+const PORT = process.env.PORT || 8765;
+const WS_PORT = process.env.WS_PORT || 8766;
+
+// ============================================
+// REVERSE PROXY / HTTPS SUPPORT
+// ============================================
+
+// Trust proxy headers when behind reverse proxy (nginx, traefik, etc.)
+if (process.env.TRUST_PROXY === 'true') {
+  app.set('trust proxy', true);
+  console.log('[AgentVault] Trusting proxy headers (X-Forwarded-For, etc.)');
+}
+
+// Security: Force HTTPS redirect in production
+app.use((req, res, next) => {
+  if (process.env.FORCE_HTTPS === 'true' && !req.secure) {
+    return res.redirect(301, `https://${req.headers.host}${req.url}`);
+  }
+  next();
+});
 
 // ============================================
 // WEBSOCKET AUTHENTICATION
@@ -125,11 +143,11 @@ let encryptionKey = null;
 let maxKeys = 20;
 
 // ============================================
-// AUDIT LOGGING
+// AUDIT LOGGING (ENCRYPTED)
 // ============================================
 
 /**
- * Log security events to audit log
+ * Log security events to encrypted audit log
  * @param {string} event - Event type (unlock, key_added, key_accessed, etc.)
  * @param {object} details - Event details
  */
@@ -141,15 +159,25 @@ function logAudit(event, details = {}) {
     ...details
   };
   
-  // Append to audit log file
-  fs.appendFileSync(AUDIT_LOG_PATH, JSON.stringify(logEntry) + '\n');
-  
-  // Also log to console for visibility
+  // Always log to console for visibility
   console.log(`[AUDIT] ${event}:`, JSON.stringify(details));
+  
+  // Encrypt audit log if vault is unlocked
+  if (encryptionKey) {
+    try {
+      const encrypted = encrypt(JSON.stringify(logEntry), encryptionKey);
+      fs.appendFileSync(AUDIT_LOG_PATH, encrypted + '\n');
+    } catch (e) {
+      console.error('[AUDIT] Failed to encrypt audit log:', e.message);
+    }
+  } else {
+    // Vault locked - store plaintext temporarily (will be encrypted on next unlock)
+    fs.appendFileSync(AUDIT_LOG_PATH, JSON.stringify(logEntry) + '\n');
+  }
 }
 
 /**
- * Get recent audit events
+ * Get recent audit events (decrypts if necessary)
  * @param {number} limit - Number of events to return
  * @returns {Array} Audit events
  */
@@ -164,6 +192,18 @@ function getAuditLog(limit = 100) {
     .filter(line => line)
     .map(line => {
       try {
+        // Try to decrypt first (if encrypted)
+        if (encryptionKey && line.length > 64) {
+          // Likely encrypted (hex string longer than typical JSON)
+          try {
+            const decrypted = decrypt(line, encryptionKey);
+            return JSON.parse(decrypted);
+          } catch (e) {
+            // Decryption failed, try parsing as plaintext
+            return JSON.parse(line);
+          }
+        }
+        // Plaintext (legacy or vault was locked)
         return JSON.parse(line);
       } catch (e) {
         return null;
