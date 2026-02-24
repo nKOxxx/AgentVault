@@ -1472,22 +1472,49 @@
       }
     }
     
+    // Fetch WebSocket token from server
+    async function getWsToken() {
+      try {
+        const response = await fetch('/api/ws-token');
+        const data = await response.json();
+        return data.token;
+      } catch (e) {
+        console.error('Failed to get WebSocket token:', e);
+        return null;
+      }
+    }
+    
     function connectWebSocket() {
+      // Don't connect if on unlock/setup screen
+      const unlockScreen = document.getElementById('unlockScreen');
+      const setupScreen = document.getElementById('setupScreen');
+      if ((unlockScreen && unlockScreen.classList.contains('active')) || 
+          (setupScreen && setupScreen.classList.contains('active'))) {
+        console.log('Not connecting WebSocket - on auth screen');
+        return;
+      }
+      
+      if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
+        console.log('WebSocket already connected or connecting');
+        return;
+      }
+      
+      console.log('Connecting WebSocket...');
       ws = new WebSocket('ws://localhost:8766');
       
-      ws.onopen = () => {
-        document.getElementById('connectionDot').classList.add('connected');
-        document.getElementById('connectionText').textContent = '✅ OpenClaw Agent connected';
-        const connectDot = document.getElementById('connectStatusDot');
-        if (connectDot) {
-          connectDot.classList.add('connected');
-          document.getElementById('connectStatusText').textContent = 'Connected! Ready to share keys.';
+      ws.onopen = async () => {
+        console.log('WebSocket connected, authenticating...');
+        // Get token and authenticate
+        const token = await getWsToken();
+        if (token) {
+          ws.send(JSON.stringify({ type: 'auth', token: token }));
+        } else {
+          console.error('No token available for authentication');
         }
-        // Enable share all button if there are unshared keys
-        renderKeys();
       };
       
       ws.onclose = () => {
+        console.log('WebSocket closed');
         document.getElementById('connectionDot').classList.remove('connected');
         document.getElementById('connectionText').textContent = '❌ OpenClaw Agent disconnected';
         const connectDot = document.getElementById('connectStatusDot');
@@ -1500,7 +1527,11 @@
         if (shareAllBtn) {
           shareAllBtn.disabled = true;
         }
-        setTimeout(connectWebSocket, 3000);
+        // Only retry if on vault screen
+        const vaultScreen = document.getElementById('vaultScreen');
+        if (vaultScreen && vaultScreen.classList.contains('active')) {
+          setTimeout(connectWebSocket, 5000);
+        }
       };
       
       ws.onerror = (error) => {
@@ -1510,7 +1541,20 @@
       
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (data.type === 'key_received') {
+        console.log('WebSocket message:', data.type);
+        
+        if (data.type === 'auth_success') {
+          console.log('WebSocket authenticated');
+          document.getElementById('connectionDot').classList.add('connected');
+          document.getElementById('connectionText').textContent = '✅ OpenClaw Agent connected';
+          const connectDot = document.getElementById('connectStatusDot');
+          if (connectDot) {
+            connectDot.classList.add('connected');
+            document.getElementById('connectStatusText').textContent = 'Connected! Ready to share keys.';
+          }
+          // Enable share all button if there are unshared keys
+          renderKeys();
+        } else if (data.type === 'key_received') {
           showAlert(`✅ OpenClaw Agent received: ${data.keyName}`, 'success');
           loadKeys(); // Refresh to show updated shared status
         }

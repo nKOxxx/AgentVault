@@ -654,6 +654,19 @@ app.get('/api/status', async (req, res) => {
   }
 });
 
+// Get WebSocket auth token (only when vault is unlocked)
+app.get('/api/ws-token', async (req, res) => {
+  try {
+    // Only provide token if vault is unlocked
+    if (!encryptionKey) {
+      return res.status(401).json({ error: 'Vault locked' });
+    }
+    res.json({ token: WS_AUTH_TOKEN });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.post('/api/init', async (req, res) => {
   try {
     const { password } = req.body;
