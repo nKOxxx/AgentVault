@@ -16,6 +16,30 @@ const app = express();
 const PORT = 8765;
 const WS_PORT = 8766;
 
+// ============================================
+// WEBSOCKET AUTHENTICATION
+// ============================================
+
+// Generate or load WebSocket auth token
+const WS_TOKEN_PATH = path.join(__dirname, '.ws-token');
+let WS_AUTH_TOKEN;
+
+function generateOrLoadWsToken() {
+  if (fs.existsSync(WS_TOKEN_PATH)) {
+    WS_AUTH_TOKEN = fs.readFileSync(WS_TOKEN_PATH, 'utf8').trim();
+  } else {
+    WS_AUTH_TOKEN = crypto.randomBytes(32).toString('hex');
+    fs.writeFileSync(WS_TOKEN_PATH, WS_AUTH_TOKEN, { mode: 0o600 });
+    console.log('[AgentVault] Generated new WebSocket auth token');
+  }
+  return WS_AUTH_TOKEN;
+}
+
+WS_AUTH_TOKEN = generateOrLoadWsToken();
+
+// Track authenticated clients
+const authenticatedClients = new Set();
+
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -398,16 +422,49 @@ const wss = new WebSocket.Server({ port: WS_PORT });
 let openclawClient = null;
 let pendingShares = new Map(); // Track pending shares
 
-wss.on('connection', (ws) => {
-  console.log('🔌 OpenClaw connected via WebSocket');
-  openclawClient = ws;
+wss.on('connection', (ws, req) => {
+  // Security: Check origin - only allow localhost
+  const origin = req.headers.origin;
+  if (origin && !origin.match(/^https?:\/\/(localhost|127\.0\.0\.1)/)) {
+    console.log(`❌ Rejected WebSocket connection from: ${origin}`);
+    ws.close(1008, 'Invalid origin');
+    return;
+  }
+  
+  console.log('🔌 WebSocket client connected from localhost');
+  
+  // Track authentication state
+  let isAuthenticated = false;
   
   ws.on('message', (message) => {
     try {
       const data = JSON.parse(message);
+      
+      // Handle authentication first
+      if (data.type === 'auth') {
+        if (data.token === WS_AUTH_TOKEN) {
+          isAuthenticated = true;
+          authenticatedClients.add(ws);
+          openclawClient = ws;
+          ws.send(JSON.stringify({ type: 'auth_success' }));
+          console.log('✅ WebSocket client authenticated');
+        } else {
+          ws.send(JSON.stringify({ type: 'auth_failed', error: 'Invalid token' }));
+          ws.close(1008, 'Authentication failed');
+          console.log('❌ WebSocket authentication failed');
+        }
+        return;
+      }
+      
+      // Reject all other messages until authenticated
+      if (!isAuthenticated) {
+        ws.send(JSON.stringify({ type: 'error', message: 'Not authenticated' }));
+        return;
+      }
+      
       console.log('Received from OpenClaw:', data.type);
       
-      // Handle requests from OpenClaw
+      // Handle requests from OpenClaw (now authenticated)
       if (data.type === 'get_key') {
         getKeyValue(data.keyId).then(keyData => {
           ws.send(JSON.stringify({
@@ -439,8 +496,11 @@ wss.on('connection', (ws) => {
   });
   
   ws.on('close', () => {
-    console.log('🔌 OpenClaw disconnected');
-    openclawClient = null;
+    console.log('🔌 WebSocket client disconnected');
+    authenticatedClients.delete(ws);
+    if (openclawClient === ws) {
+      openclawClient = null;
+    }
   });
 });
 
@@ -517,12 +577,28 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Get WebSocket auth token (requires vault to be unlocked)
+app.get('/api/ws-token', async (req, res) => {
+  try {
+    if (!encryptionKey) {
+      return res.status(401).json({ error: 'Vault locked' });
+    }
+    
+    res.json({
+      token: WS_AUTH_TOKEN,
+      wsUrl: `ws://localhost:${WS_PORT}`
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/status', async (req, res) => {
   try {
     const initialized = await isVaultInitialized();
     const unlocked = encryptionKey !== null;
     const keyCount = unlocked ? await countKeys() : 0;
-    const connected = openclawClient !== null;
+    const connected = openclawClient !== null && authenticatedClients.has(openclawClient);
     
     res.json({
       initialized,
