@@ -997,6 +997,19 @@
         el.classList.remove('active');
       });
       document.getElementById(screen + 'Screen').classList.add('active');
+      
+      // Reset unlock button when showing unlock screen
+      if (screen === 'unlock') {
+        const unlockBtn = document.getElementById('unlockBtn');
+        if (unlockBtn) {
+          unlockBtn.textContent = '🔓 Unlock Vault';
+          unlockBtn.disabled = false;
+        }
+        const passwordField = document.getElementById('unlockPassword');
+        if (passwordField) {
+          passwordField.value = '';
+        }
+      }
     }
     
     function connectToOpenClaw() {
@@ -1180,6 +1193,13 @@
           
           // Show unlock screen
           showScreen('unlock');
+          
+          // Reset unlock button state (in case it was stuck)
+          const unlockBtn = document.getElementById('unlockBtn');
+          if (unlockBtn) {
+            unlockBtn.textContent = '🔓 Unlock Vault';
+            unlockBtn.disabled = false;
+          }
           
           // Clear password field
           const passwordField = document.getElementById('unlockPassword');
