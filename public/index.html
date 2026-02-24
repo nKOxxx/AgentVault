@@ -583,7 +583,7 @@
           <p id="connectStatusText" style="color: #666; font-size: 14px;">Waiting for connection...</p>
         </div>
         
-        <button class="btn btn-primary" onclick="connectToOpenClaw()">Connect to Ares</button>
+        <button class="btn btn-primary" onclick="connectToOpenClaw()">Connect to OpenClaw Agent</button>
         <button class="btn btn-secondary" onclick="skipConnection()">Skip for now</button>
         
         <div class="info-text" style="margin-top: 20px;">
@@ -672,7 +672,7 @@
               </optgroup>
               <optgroup label="Our Products">
                 <option value="moltbook">Moltbook</option>
-                <option value="aresos">AresOS</option>
+                <option value="openclaw">OpenClaw</option>
                 <option value="agentvault">AgentVault</option>
                 <option value="agentdiplomacy">AgentDiplomacy</option>
                 <option value="memorybridge">MemoryBridge</option>
@@ -746,7 +746,7 @@
           <div class="input-group" style="display: flex; align-items: center; gap: 8px;">
             <input type="checkbox" id="autoShareKey" style="width: auto;">
             <label for="autoShareKey" style="margin: 0; font-weight: normal;">
-              Share with Ares immediately
+              Share with OpenClaw Agent immediately
             </label>
           </div>
           
@@ -853,7 +853,7 @@
       
       // Our Products
       moltbook: 'Moltbook',
-      aresos: 'AresOS',
+      openclaw: 'OpenClaw',
       agentvault: 'AgentVault',
       agentdiplomacy: 'AgentDiplomacy',
       memorybridge: 'MemoryBridge',
@@ -1193,7 +1193,7 @@
         const shareStatus = key.is_shared 
           ? `<span class="shared-indicator">✓ Shared${key.shared_with ? ` with ${key.shared_with}` : ''}</span>`
           : `<span class="unshared-indicator">⚠ Not shared</span>`;
-        const shareBtnText = key.is_shared ? 'Share Again' : 'Share with Ares';
+        const shareBtnText = key.is_shared ? 'Share Again' : 'Share with OpenClaw Agent';
         const shareBtnClass = key.is_shared ? 'btn-share shared' : 'btn-share';
         
         const serviceName = serviceDisplayNames[key.service] || key.service || 'Other';
@@ -1300,9 +1300,9 @@
           const result = await response.json();
           let message = 'Key added successfully';
           if (result.autoShared) {
-            message += ' and shared with Ares';
+            message += ' and shared with OpenClaw Agent';
           } else if (autoShare) {
-            message += ' (auto-share failed - Ares not connected)';
+            message += ' (auto-share failed - OpenClaw Agent not connected)';
           }
           showAlert(message, result.autoShared ? 'success' : (autoShare ? 'warning' : 'success'));
           
@@ -1339,7 +1339,7 @@
     
     async function shareKey(id) {
       const btn = document.getElementById(`share-btn-${id}`);
-      const originalText = btn ? btn.textContent : 'Share with Ares';
+      const originalText = btn ? btn.textContent : 'Share with OpenClaw Agent';
       
       if (btn) {
         btn.textContent = 'Sharing...';
@@ -1352,14 +1352,14 @@
         });
         
         if (response.ok) {
-          showAlert('✅ Key shared with Ares successfully', 'success');
+          showAlert('✅ Key shared with OpenClaw Agent successfully', 'success');
           loadKeys(); // Refresh to show shared status
         } else {
           const error = await response.json();
           showAlert(`❌ ${error.error}`, 'error');
         }
       } catch (e) {
-        showAlert('❌ Failed to share key. Is Ares connected?', 'error');
+        showAlert('❌ Failed to share key. Is OpenClaw Agent connected?', 'error');
       } finally {
         if (btn) {
           btn.textContent = originalText;
@@ -1375,7 +1375,7 @@
       btn.disabled = true;
       btn.textContent = '📤 Sharing...';
       status.style.display = 'block';
-      status.textContent = 'Sharing keys with Ares...';
+      status.textContent = 'Sharing keys with OpenClaw Agent...';
       
       try {
         const response = await fetch('/api/keys/share-all', {
@@ -1396,8 +1396,8 @@
           status.textContent = `Failed: ${error.error}`;
         }
       } catch (e) {
-        showAlert('❌ Failed to share keys. Is Ares connected?', 'error');
-        status.textContent = 'Failed: Ares not connected';
+        showAlert('❌ Failed to share keys. Is OpenClaw Agent connected?', 'error');
+        status.textContent = 'Failed: OpenClaw Agent not connected';
       } finally {
         btn.disabled = false;
         renderKeys(); // Update button text
@@ -1426,7 +1426,7 @@
       
       ws.onopen = () => {
         document.getElementById('connectionDot').classList.add('connected');
-        document.getElementById('connectionText').textContent = '✅ Ares connected';
+        document.getElementById('connectionText').textContent = '✅ OpenClaw Agent connected';
         const connectDot = document.getElementById('connectStatusDot');
         if (connectDot) {
           connectDot.classList.add('connected');
@@ -1438,7 +1438,7 @@
       
       ws.onclose = () => {
         document.getElementById('connectionDot').classList.remove('connected');
-        document.getElementById('connectionText').textContent = '❌ Ares disconnected';
+        document.getElementById('connectionText').textContent = '❌ OpenClaw Agent disconnected';
         const connectDot = document.getElementById('connectStatusDot');
         if (connectDot) {
           connectDot.classList.remove('connected');
@@ -1460,7 +1460,7 @@
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'key_received') {
-          showAlert(`✅ Ares received: ${data.keyName}`, 'success');
+          showAlert(`✅ OpenClaw Agent received: ${data.keyName}`, 'success');
           loadKeys(); // Refresh to show updated shared status
         }
       };

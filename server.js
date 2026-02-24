@@ -350,7 +350,7 @@ function getKeyValue(id) {
 }
 
 // Mark key as shared
-function markKeyShared(id, agentName = 'Ares') {
+function markKeyShared(id, agentName = 'Agent') {
   return new Promise((resolve, reject) => {
     db.run(
       "UPDATE keys SET shared_with = ? WHERE id = ?",
@@ -428,7 +428,7 @@ wss.on('connection', (ws) => {
         console.log(`✅ Key received by agent: ${data.keyName}`);
         // Mark key as shared in database
         if (data.keyId) {
-          markKeyShared(data.keyId, data.agentName || 'Ares').catch(console.error);
+          markKeyShared(data.keyId, data.agentName || 'Agent').catch(console.error);
         }
         // Remove from pending
         pendingShares.delete(data.keyId);
@@ -448,7 +448,7 @@ wss.on('connection', (ws) => {
 async function shareToOpenClaw(keyData, keyId) {
   return new Promise((resolve, reject) => {
     if (!openclawClient) {
-      reject(new Error('Ares not connected. Please wait for connection or refresh the page.'));
+      reject(new Error('OpenClaw Agent not connected. Please wait for connection or refresh the page.'));
       return;
     }
     
@@ -476,7 +476,7 @@ async function shareToOpenClaw(keyData, keyId) {
         // Timeout after 10 seconds
         clearInterval(checkInterval);
         pendingShares.delete(keyId);
-        reject(new Error('Timeout: Ares did not confirm receipt within 10 seconds'));
+        reject(new Error('Timeout: OpenClaw Agent did not confirm receipt within 10 seconds'));
       }
     }, 500);
   });
@@ -485,7 +485,7 @@ async function shareToOpenClaw(keyData, keyId) {
 // Share all unshared keys
 async function shareAllUnshared() {
   if (!openclawClient) {
-    throw new Error('Ares not connected');
+    throw new Error('OpenClaw Agent not connected');
   }
   
   const keys = await getKeys();
@@ -530,7 +530,7 @@ app.get('/api/status', async (req, res) => {
       keyCount,
       maxKeys,
       connected,
-      agentName: 'Ares'
+      agentName: 'OpenClaw Agent'
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -659,11 +659,11 @@ app.post('/api/keys/:id/share', async (req, res) => {
     logAudit('key_shared', {
       keyId: req.params.id,
       keyName: keyData.name,
-      sharedWith: 'Ares',
+      sharedWith: 'OpenClaw Agent',
       timestamp: new Date().toISOString()
     });
     
-    res.json({ success: true, message: 'Shared with Ares' });
+    res.json({ success: true, message: 'Shared with OpenClaw Agent' });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

@@ -81,7 +81,7 @@ npm start
 ```
 ┌─────────────────┐     WebSocket      ┌─────────────────┐
 │   AgentVault    │ ◄────────────────► │   OpenClaw      │
-│   localhost:8765│                    │   Agent (Ares)  │
+│   localhost:8765│                    │   OpenClaw Agent│
 └────────┬────────┘                    └─────────────────┘
          │
     ┌────▼────┐
@@ -141,7 +141,7 @@ AgentVault connects to OpenClaw via WebSocket on port `8766`.
   "type": "key_received",
   "keyId": "abc123",
   "keyName": "Supabase Production",
-  "agentName": "Ares"
+  "agentName": "OpenClaw Agent"
 }
 ```
 
