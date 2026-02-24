@@ -1,8 +1,34 @@
-# AgentVault 🔐
+# AgentVault 🔐 — Secure Credential Management for AI Agents
 
-**Secure credential storage for AI agents with audit logging.**
+**Where do AI agents store their secrets?** API keys scattered in environment variables. Tokens in plain text files. No audit trail. No rotation tracking. No security.
 
-AgentVault stores API keys, tokens, and secrets locally with hardware-accelerated encryption (AES-256-GCM). Share credentials securely with your OpenClaw agent via WebSocket.
+**AgentVault solves this.** It's a secure, encrypted vault designed specifically for AI agents — with hardware-accelerated encryption, audit logging, and seamless OpenClaw integration.
+
+> *"Finally, a proper secrets manager for my AI agent that doesn't require enterprise infrastructure."*
+
+---
+
+## ⚠️ Production Notice
+
+**AgentVault is designed for LOCAL-ONLY, PERSONAL USE:**
+- ✅ Your credentials never leave your machine
+- ⚠️ No cloud backup — you must backup `vault.db` and remember your master password
+- ⚠️ Encryption keys derived from your master password — don't forget it!
+- ⚠️ Not for enterprise multi-user deployments (single-user only)
+- ⚠️ WebSocket connection is localhost-only by design
+
+---
+
+## Why AgentVault Exists
+
+| Without AgentVault | With AgentVault |
+|-------------------|-----------------|
+| ❌ API keys in .env files | ✅ Encrypted vault with master password |
+| ❌ No audit trail | ✅ Complete log of who accessed what |
+| ❌ Manual key sharing | ✅ One-click share with OpenClaw agent |
+| ❌ Forgotten rotations | ✅ Automatic rotation reminders |
+| ❌ Keys scattered everywhere | ✅ Centralized, organized secrets |
+| ❌ No security controls | ✅ Rate limiting, input validation, CORS |
 
 ---
 
@@ -117,6 +143,83 @@ AgentVault connects to OpenClaw via WebSocket on port `8766`.
   "keyName": "Supabase Production",
   "agentName": "Ares"
 }
+```
+
+---
+
+## 🧪 Testing AgentVault
+
+### Quick Test (5 minutes)
+
+```bash
+# 1. Start AgentVault
+cd /path/to/AgentVault
+./start.sh start
+
+# 2. Initialize vault (first run only)
+curl -X POST http://localhost:8765/api/init \
+  -H "Content-Type: application/json" \
+  -d '{"password": "testpassword123"}'
+
+# 3. Unlock vault
+curl -X POST http://localhost:8765/api/unlock \
+  -H "Content-Type: application/json" \
+  -d '{"password": "testpassword123"}'
+
+# 4. Add a test key
+curl -X POST http://localhost:8765/api/keys \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Test API Key",
+    "service": "test-service",
+    "url": "https://api.test.com",
+    "value": "sk_test_12345_secret",
+    "autoShare": false
+  }'
+
+# 5. List keys
+curl http://localhost:8765/api/keys
+
+# 6. Check audit log
+curl http://localhost:8765/api/audit
+
+# 7. Open Web UI
+open http://localhost:8765
+# Verify the test key appears in the list
+```
+
+### What to Verify
+
+✅ **Basic functionality:**
+- Vault initializes and unlocks correctly
+- Keys add and list properly
+- Web UI displays keys with correct metadata
+- Unlock with wrong password fails (rate limited)
+
+✅ **Encryption:**
+```bash
+# Verify data is encrypted in database
+sqlite3 vault.db "SELECT encrypted_value FROM keys LIMIT 1;"
+# Should see hex gibberish, not "sk_test_12345_secret"
+```
+
+✅ **Audit logging:**
+```bash
+# Check audit trail
+cat audit.log | tail -5
+# Should see vault_unlocked, key_added events
+```
+
+✅ **WebSocket (with OpenClaw running):**
+1. Start OpenClaw agent
+2. Check connection status: `curl http://localhost:8765/api/status`
+3. Add key with `"autoShare": true` — should auto-share
+4. Check key shows "✓ Shared" badge in Web UI
+
+✅ **Reset (cleanup):**
+```bash
+# WARNING: This deletes all vault data
+curl -X POST http://localhost:8765/api/reset
 ```
 
 ---
