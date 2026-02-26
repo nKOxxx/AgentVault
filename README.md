@@ -8,6 +8,34 @@
 
 ---
 
+## ⚠️ CRITICAL: BACKUP REQUIRED
+
+**AgentVault stores everything locally. If you lose the vault.db file, your keys are gone forever.**
+
+### ⚡ You MUST manually backup vault.db
+
+```bash
+# macOS/Linux - Add to your backup script:
+cp ~/.openclaw/workspace/projects/AgentVault/vault.db ~/backups/vault-$(date +%Y%m%d).db
+
+# Windows - Copy this file regularly:
+# C:\Users\[username]\.openclaw\workspace\projects\AgentVault\vault.db
+```
+
+### 🚨 What you need to know:
+- **No cloud sync** — Your data stays on YOUR machine only
+- **No password recovery** — Forget your master password = vault is unrecoverable
+- **No automatic backups** — You are responsible for backing up `vault.db`
+- **Single user only** — Don't share vault files between users
+- **File corruption risk** — Hard drive failure, accidental deletion, etc.
+
+### ✅ Recommended backup strategy:
+1. **Daily:** Automated backup of `vault.db` to external drive/cloud
+2. **Weekly:** Verify backup file works by testing unlock
+3. **Before major changes:** Manual export/copy of vault.db
+
+---
+
 ## ⚠️ Production Notice
 
 **AgentVault is designed for LOCAL-ONLY, PERSONAL USE:**
@@ -272,6 +300,63 @@ MAX_KEYS=20         # Maximum keys per vault
 ├── audit.log       # Security audit trail
 └── server.js       # Main server
 ```
+
+---
+
+## Backup & Restore
+
+### Why Backup?
+AgentVault stores all data locally in `vault.db`. If this file is lost, corrupted, or deleted, your keys are **gone forever**. There is no cloud backup, no recovery service, and no password reset.
+
+### How to Backup
+
+**Option 1: Manual backup (easiest)**
+```bash
+# macOS/Linux
+# Copy vault.db to your backup location
+cp ~/.openclaw/workspace/projects/AgentVault/vault.db ~/Documents/agentvault-backup-$(date +%Y%m%d).db
+
+# Windows (PowerShell)
+# Copy vault.db to your backup location
+Copy-Item "$env:USERPROFILE\.openclaw\workspace\projects\AgentVault\vault.db" "$env:USERPROFILE\Documents\agentvault-backup-$(Get-Date -Format yyyyMMdd).db"
+```
+
+**Option 2: Automated daily backup (macOS/Linux)**
+```bash
+# Add to crontab (runs daily at 2am)
+0 2 * * * cp ~/.openclaw/workspace/projects/AgentVault/vault.db ~/backups/vault-$(date +\%Y\%m\%d).db
+```
+
+**Option 3: Cloud backup (encrypted)**
+Upload `vault.db` to your preferred cloud storage (Dropbox, Google Drive, etc.). The file is already encrypted, so it's safe to store in the cloud.
+
+### How to Restore
+
+1. **Stop AgentVault** if running
+2. **Replace vault.db** with your backup:
+   ```bash
+   cp ~/backups/vault-20260226.db ~/.openclaw/workspace/projects/AgentVault/vault.db
+   ```
+3. **Restart AgentVault**
+4. **Unlock with your master password** (the one from when backup was made)
+
+### What to Backup
+
+| File | Importance | Description |
+|------|-----------|-------------|
+| `vault.db` | **CRITICAL** | Contains all encrypted keys. Without this, keys are lost. |
+| `audit.log` | Optional | Security audit trail. Can be regenerated. |
+
+**You only need `vault.db` for a complete restore.**
+
+### Best Practices
+
+- ✅ Backup daily if you add/modify keys frequently
+- ✅ Test restore process monthly with a test vault
+- ✅ Store backups in multiple locations (local + cloud)
+- ✅ Never commit `vault.db` to Git (it's in `.gitignore`)
+- ❌ Don't rename backup files — keep date in filename
+- ❌ Don't edit `vault.db` directly — will corrupt it
 
 ---
 
