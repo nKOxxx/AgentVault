@@ -1064,6 +1064,56 @@ app.post('/api/config', async (req, res) => {
   }
 });
 
+// Auto-restart OpenClaw listener if it crashes
+let listenerProcess = null;
+
+function startListener() {
+  // Try multiple possible paths for the listener
+  const possiblePaths = [
+    path.join(__dirname, '..', '..', '.agent-vault', 'listener.js'),  // From projects/AgentVault/
+    path.join(__dirname, '.agent-vault', 'listener.js'),               // From workspace root
+    path.join(process.cwd(), '.agent-vault', 'listener.js'),           // From current working dir
+    '/Users/ares/.openclaw/workspace/.agent-vault/listener.js'         // Absolute path
+  ];
+  
+  let listenerPath = null;
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      listenerPath = p;
+      break;
+    }
+  }
+  
+  if (!listenerPath) {
+    console.log('[AgentVault] Listener not found at expected paths, skipping auto-start');
+    console.log('[AgentVault] Searched:', possiblePaths);
+    return;
+  }
+  
+  console.log('[AgentVault] Found listener at:', listenerPath);
+
+  console.log('[AgentVault] Starting OpenClaw listener...');
+
+  const { spawn } = require('child_process');
+  listenerProcess = spawn('node', [listenerPath], {
+    detached: false,
+    stdio: 'pipe'
+  });
+
+  listenerProcess.stdout.on('data', (data) => {
+    console.log(`[listener] ${data.toString().trim()}`);
+  });
+
+  listenerProcess.stderr.on('data', (data) => {
+    console.error(`[listener] ${data.toString().trim()}`);
+  });
+
+  listenerProcess.on('exit', (code) => {
+    console.log(`[AgentVault] Listener exited with code ${code}, restarting in 5s...`);
+    setTimeout(startListener, 5000);
+  });
+}
+
 // Start server
 initDB();
 
@@ -1077,4 +1127,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('   Open http://localhost:8765 in your browser');
   console.log('');
+
+  // Start listener after server is up
+  startListener();
 });
