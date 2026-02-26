@@ -442,6 +442,43 @@ function markKeyShared(id, agentName = 'Agent') {
   });
 }
 
+// Unshare key (revoke from agent)
+function unshareKey(id) {
+  return new Promise((resolve, reject) => {
+    db.run(
+      "UPDATE keys SET shared_with = NULL WHERE id = ?",
+      [id],
+      function(err) {
+        if (err) reject(err);
+        resolve();
+      }
+    );
+  });
+}
+
+// Update key (for rotation/editing)
+function updateKey(id, name, service, url, value, resetRotation = false) {
+  return new Promise((resolve, reject) => {
+    const encrypted = encrypt(value, encryptionKey);
+    
+    let sql, params;
+    if (resetRotation) {
+      // Reset rotation timer when updating value
+      sql = "UPDATE keys SET name = ?, service = ?, url = ?, encrypted_value = ?, shared_with = NULL, last_rotated = CURRENT_TIMESTAMP WHERE id = ?";
+      params = [name, service, url, encrypted, id];
+    } else {
+      // Just update metadata, keep rotation timer
+      sql = "UPDATE keys SET name = ?, service = ?, url = ?, encrypted_value = ?, shared_with = NULL WHERE id = ?";
+      params = [name, service, url, encrypted, id];
+    }
+    
+    db.run(sql, params, function(err) {
+      if (err) reject(err);
+      resolve(this.changes);
+    });
+  });
+}
+
 // Delete key
 function deleteKey(id) {
   return new Promise((resolve, reject) => {
@@ -828,6 +865,70 @@ app.post('/api/keys/share-all', async (req, res) => {
     
     const results = await shareAllUnshared();
     res.json({ success: true, ...results });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Stop sharing a key (revoke from OpenClaw)
+app.post('/api/keys/:id/unshare', async (req, res) => {
+  try {
+    if (!encryptionKey) {
+      return res.status(401).json({ error: 'Vault locked' });
+    }
+    
+    await unshareKey(req.params.id);
+    
+    // Log unshare
+    logAudit('key_unshared', {
+      keyId: req.params.id,
+      timestamp: new Date().toISOString()
+    });
+    
+    res.json({ success: true, message: 'Key sharing revoked' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get single key value (for editing)
+app.get('/api/keys/:id/value', async (req, res) => {
+  try {
+    if (!encryptionKey) {
+      return res.status(401).json({ error: 'Vault locked' });
+    }
+    
+    const keyData = await getKeyValue(req.params.id);
+    res.json(keyData);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Update/edit a key (for rotation)
+app.put('/api/keys/:id', async (req, res) => {
+  try {
+    if (!encryptionKey) {
+      return res.status(401).json({ error: 'Vault locked' });
+    }
+    
+    const { name, service, url, value, resetRotation } = req.body;
+    
+    if (!name || !value) {
+      return res.status(400).json({ error: 'Name and value required' });
+    }
+    
+    await updateKey(req.params.id, name, service, url, value, resetRotation);
+    
+    // Log update
+    logAudit('key_updated', {
+      keyId: req.params.id,
+      keyName: name,
+      resetRotation: resetRotation,
+      timestamp: new Date().toISOString()
+    });
+    
+    res.json({ success: true, message: 'Key updated successfully' });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

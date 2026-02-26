@@ -233,7 +233,17 @@
       background: #ff4757;
       color: white;
     }
-    
+
+    .btn-edit {
+      background: #3742fa;
+      color: white;
+    }
+
+    .btn-unshare {
+      background: #ffa502;
+      color: white;
+    }
+
     .btn-share-all {
       background: #3742fa;
       color: white;
@@ -756,7 +766,93 @@
           <button class="btn btn-primary" onclick="addKey()">Save Key</button>
           <button class="btn btn-secondary" onclick="toggleAddForm()">Cancel</button>
         </div>
-        
+
+        <!-- Edit Key Form (hidden by default) -->
+        <div class="add-key-form" id="editKeyForm">
+          <h3 style="margin-bottom: 15px; color: #333;">Edit Key</h3>
+
+          <div class="input-group">
+            <label>Key Name</label>
+            <input type="text" id="editKeyName" placeholder="e.g., Supabase Production">
+          </div>
+
+          <div class="input-group">
+            <label>Service</label>
+            <select id="editKeyService">
+              <option value="">Select service...</option>
+              <optgroup label="Social Media">
+                <option value="twitter">X (Twitter)</option>
+              </optgroup>
+              <optgroup label="Cloud & Hosting">
+                <option value="aws">AWS</option>
+                <option value="render">Render</option>
+                <option value="vercel">Vercel</option>
+                <option value="cloudflare">Cloudflare</option>
+                <option value="digitalocean">DigitalOcean</option>
+                <option value="firebase">Firebase</option>
+              </optgroup>
+              <optgroup label="Databases">
+                <option value="supabase">Supabase</option>
+                <option value="postgres">PostgreSQL</option>
+                <option value="mysql">MySQL</option>
+                <option value="mongodb">MongoDB</option>
+                <option value="redis">Redis</option>
+              </optgroup>
+              <optgroup label="AI & LLMs">
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic (Claude)</option>
+                <option value="moonshot">Moonshot (Kimi)</option>
+                <option value="elevenlabs">ElevenLabs</option>
+                <option value="deepgram">Deepgram</option>
+              </optgroup>
+              <optgroup label="Our Products">
+                <option value="moltbook">Moltbook</option>
+                <option value="openclaw">OpenClaw</option>
+                <option value="agentvault">AgentVault</option>
+                <option value="agentdiplomacy">AgentDiplomacy</option>
+                <option value="memorybridge">MemoryBridge</option>
+              </optgroup>
+              <optgroup label="Communication">
+                <option value="telegram">Telegram</option>
+                <option value="slack">Slack</option>
+                <option value="discord">Discord</option>
+                <option value="twilio">Twilio</option>
+                <option value="sendgrid">SendGrid</option>
+              </optgroup>
+              <optgroup label="Dev Tools">
+                <option value="github">GitHub</option>
+                <option value="google">Google APIs</option>
+                <option value="notion">Notion</option>
+                <option value="figma">Figma</option>
+              </optgroup>
+              <optgroup label="Other">
+                <option value="stripe">Stripe</option>
+                <option value="other">Other</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label>URL (optional)</label>
+            <input type="text" id="editKeyUrl" placeholder="e.g., https://project.supabase.co">
+          </div>
+
+          <div class="input-group">
+            <label>Secret Value</label>
+            <input type="password" id="editKeyValue" placeholder="New API key value">
+          </div>
+
+          <div class="input-group" style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="editResetRotation" style="width: auto;">
+            <label for="editResetRotation" style="margin: 0; font-weight: normal;">
+              Reset rotation timer (mark as freshly rotated)
+            </label>
+          </div>
+
+          <button class="btn btn-primary" id="saveEditBtn" onclick="saveEditedKey()">Save Changes</button>
+          <button class="btn btn-secondary" onclick="hideEditForm()">Cancel</button>
+        </div>
+
         <button class="btn btn-primary" id="showAddBtn" onclick="toggleAddForm()" style="margin-bottom: 20px;">
           + Add New Key
         </button>
@@ -1272,8 +1368,10 @@
         
         const serviceName = serviceDisplayNames[key.service] || key.service || 'Other';
         
+        const unshareBtn = key.is_shared ? `<button class="btn-unshare" onclick="unshareKey('${key.id}')" id="unshare-btn-${key.id}">Revoke Share</button>` : '';
+        
         return `
-          <div class="key-item ${warningClass} ${sharedClass}">
+          <div class="key-item ${warningClass} ${sharedClass}" id="key-item-${key.id}">
             <div class="key-header">
               <div>
                 <span class="key-name">${key.name}</span>
@@ -1288,6 +1386,8 @@
             </div>
             <div class="key-actions">
               <button class="${shareBtnClass}" onclick="shareKey('${key.id}')" id="share-btn-${key.id}">${shareBtnText}</button>
+              ${unshareBtn}
+              <button class="btn-edit" onclick="editKey('${key.id}')">Edit</button>
               <button class="btn-delete" onclick="deleteKey('${key.id}')">Delete</button>
             </div>
           </div>
@@ -1414,17 +1514,17 @@
     async function shareKey(id) {
       const btn = document.getElementById(`share-btn-${id}`);
       const originalText = btn ? btn.textContent : 'Share with OpenClaw Agent';
-      
+
       if (btn) {
         btn.textContent = 'Sharing...';
         btn.disabled = true;
       }
-      
+
       try {
         const response = await fetch(`/api/keys/${id}/share`, {
           method: 'POST'
         });
-        
+
         if (response.ok) {
           showAlert('✅ Key shared with OpenClaw Agent successfully', 'success');
           loadKeys(); // Refresh to show shared status
@@ -1441,7 +1541,118 @@
         }
       }
     }
-    
+
+    async function unshareKey(id) {
+      const btn = document.getElementById(`unshare-btn-${id}`);
+
+      if (btn) {
+        btn.textContent = 'Revoking...';
+        btn.disabled = true;
+      }
+
+      try {
+        const response = await fetch(`/api/keys/${id}/unshare`, {
+          method: 'POST'
+        });
+
+        if (response.ok) {
+          showAlert('✅ Key sharing revoked', 'success');
+          loadKeys(); // Refresh to show unshared status
+        } else {
+          const error = await response.json();
+          showAlert(`❌ ${error.error}`, 'error');
+        }
+      } catch (e) {
+        showAlert('❌ Failed to revoke sharing', 'error');
+      }
+    }
+
+    // Edit key modal/form
+    let editingKeyId = null;
+
+    async function editKey(id) {
+      const key = keys.find(k => k.id === id);
+      if (!key) {
+        showAlert('Key not found', 'error');
+        return;
+      }
+
+      editingKeyId = id;
+
+      // Get current value
+      try {
+        const response = await fetch(`/api/keys/${id}/value`);
+        if (!response.ok) {
+          showAlert('Failed to load key value', 'error');
+          return;
+        }
+        const keyData = await response.json();
+
+        // Populate edit form
+        document.getElementById('editKeyName').value = key.name;
+        document.getElementById('editKeyService').value = key.service || '';
+        document.getElementById('editKeyUrl').value = key.url || '';
+        document.getElementById('editKeyValue').value = keyData.value || '';
+        document.getElementById('editResetRotation').checked = false;
+
+        showEditForm();
+      } catch (e) {
+        showAlert('Failed to load key for editing', 'error');
+      }
+    }
+
+    function showEditForm() {
+      document.getElementById('editKeyForm').classList.add('active');
+      document.getElementById('addKeyForm').classList.remove('active');
+    }
+
+    function hideEditForm() {
+      document.getElementById('editKeyForm').classList.remove('active');
+      editingKeyId = null;
+    }
+
+    async function saveEditedKey() {
+      if (!editingKeyId) return;
+
+      const name = document.getElementById('editKeyName').value;
+      const service = document.getElementById('editKeyService').value;
+      const url = document.getElementById('editKeyUrl').value;
+      const value = document.getElementById('editKeyValue').value;
+      const resetRotation = document.getElementById('editResetRotation').checked;
+
+      if (!name || !value) {
+        showAlert('Name and value are required', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('saveEditBtn');
+      const originalText = btn.textContent;
+      btn.textContent = 'Saving...';
+      btn.disabled = true;
+
+      try {
+        const response = await fetch(`/api/keys/${editingKeyId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, service, url, value, resetRotation })
+        });
+
+        if (response.ok) {
+          showAlert(resetRotation ? '✅ Key updated and rotation timer reset' : '✅ Key updated successfully', 'success');
+          hideEditForm();
+          loadKeys();
+        } else {
+          const error = await response.json();
+          showAlert(`❌ ${error.error}`, 'error');
+        }
+      } catch (e) {
+        showAlert('❌ Failed to update key', 'error');
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    }
+
     async function shareAllKeys() {
       const btn = document.getElementById('shareAllBtn');
       const status = document.getElementById('shareAllStatus');
