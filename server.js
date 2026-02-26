@@ -395,12 +395,25 @@ function addKey(name, service, url, value) {
 // Get key value (for sharing)
 function getKeyValue(id) {
   return new Promise((resolve, reject) => {
+    console.log(`[getKeyValue] Getting key ${id}, encryptionKey: ${encryptionKey ? 'SET' : 'NULL'}`);
+    
     db.get("SELECT name, service, url, encrypted_value FROM keys WHERE id = ?", [id], (err, row) => {
-      if (err) reject(err);
-      if (!row) reject(new Error('Key not found'));
+      if (err) {
+        console.log(`[getKeyValue] DB error: ${err.message}`);
+        reject(err);
+        return;
+      }
+      if (!row) {
+        console.log(`[getKeyValue] Key not found: ${id}`);
+        reject(new Error('Key not found'));
+        return;
+      }
+      
+      console.log(`[getKeyValue] Found key: ${row.name}, encrypted_value length: ${row.encrypted_value?.length}`);
       
       try {
         const value = decrypt(row.encrypted_value, encryptionKey);
+        console.log(`[getKeyValue] Decrypted successfully`);
         resolve({
           name: row.name,
           service: row.service,
@@ -408,6 +421,7 @@ function getKeyValue(id) {
           value: value
         });
       } catch (e) {
+        console.log(`[getKeyValue] Decryption failed: ${e.message}`);
         reject(new Error('Decryption failed'));
       }
     });
@@ -548,7 +562,10 @@ wss.on('connection', (ws, req) => {
 // Share key to OpenClaw
 async function shareToOpenClaw(keyData, keyId) {
   return new Promise((resolve, reject) => {
+    console.log(`[shareToOpenClaw] Starting share for ${keyData.name}, openclawClient: ${openclawClient ? 'connected' : 'NULL'}`);
+    
     if (!openclawClient) {
+      console.log(`[shareToOpenClaw] REJECTED: No openclawClient`);
       reject(new Error('OpenClaw Agent not connected. Please wait for connection or refresh the page.'));
       return;
     }
@@ -559,12 +576,16 @@ async function shareToOpenClaw(keyData, keyId) {
       retries: 0
     });
     
-    openclawClient.send(JSON.stringify({
+    const message = JSON.stringify({
       type: 'shared_secret',
       keyId: keyId,
       timestamp: new Date().toISOString(),
       data: keyData
-    }));
+    });
+    
+    console.log(`[shareToOpenClaw] Sending message to client...`);
+    openclawClient.send(message);
+    console.log(`[shareToOpenClaw] Message sent, waiting for confirmation...`);
     
     // Wait for confirmation with timeout
     const checkInterval = setInterval(() => {

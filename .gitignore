@@ -1,0 +1,24 @@
+# User data - never commit
+vault.db
+audit.log
+
+# Environment
+.env
+.env.local
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Tokens
+.ws-token
