@@ -3,1830 +3,619 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🔐 AgentVault</title>
+  <title>AgentVault</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/theme.css">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-    
-    .container {
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      width: 100%;
-      max-width: 500px;
-      overflow: hidden;
-    }
-    
-    .header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 30px;
-      text-align: center;
-    }
-    
-    .header h1 {
-      font-size: 28px;
-      margin-bottom: 5px;
-    }
-    
-    .header p {
-      opacity: 0.9;
-      font-size: 14px;
-    }
-    
-    .content {
-      padding: 30px;
-    }
-    
-    .setup-screen, .unlock-screen, .vault-screen, .connect-screen {
-      display: none;
-    }
-    
-    .setup-screen.active, .unlock-screen.active, .vault-screen.active, .connect-screen.active {
-      display: block;
-    }
-    
-    .input-group {
-      margin-bottom: 20px;
-    }
-    
-    .input-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: #333;
-      font-size: 14px;
-    }
-    
-    .input-group input, .input-group select {
-      width: 100%;
-      padding: 12px 15px;
-      border: 2px solid #e0e0e0;
-      border-radius: 10px;
-      font-size: 16px;
-      transition: border-color 0.3s;
-    }
-    
-    .input-group input:focus, .input-group select:focus {
-      outline: none;
-      border-color: #667eea;
-    }
-    
-    .btn {
-      width: 100%;
-      padding: 15px;
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: box-shadow 0.2s, opacity 0.2s;
-    }
-
-    .btn:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      opacity: 0.95;
-    }
-    
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-    
-    .btn-secondary {
-      background: #f0f0f0;
-      color: #333;
-      margin-top: 10px;
-    }
-    
-    .btn-danger {
-      background: #ff4757;
-      color: white;
-    }
-    
-    .btn-success {
-      background: #2ed573;
-      color: white;
-    }
-    
-    .vault-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    
-    .vault-header h2 {
-      font-size: 20px;
-      color: #333;
-    }
-    
-    .key-count {
-      background: #667eea;
-      color: white;
-      padding: 5px 15px;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    
-    .key-list {
-      max-height: 400px;
-      overflow-y: auto;
-    }
-    
-    .key-item {
-      background: #f8f9fa;
-      border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 12px;
-      border-left: 4px solid #667eea;
-      transition: box-shadow 0.2s, border-color 0.2s;
-      position: relative;
-      left: 0;
-    }
-
-    .key-item:hover {
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-      border-left-color: #764ba2;
-    }
-    
-    .key-item.warning {
-      border-left-color: #ffa502;
-    }
-    
-    .key-item.danger {
-      border-left-color: #ff4757;
-    }
-    
-    .key-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    
-    .key-name {
-      font-weight: 600;
-      font-size: 16px;
-      color: #333;
-    }
-    
-    .key-service {
-      font-size: 12px;
-      color: #667eea;
-      background: rgba(102, 126, 234, 0.1);
-      padding: 2px 8px;
-      border-radius: 10px;
-    }
-    
-    .key-meta {
-      font-size: 13px;
-      color: #666;
-      margin-bottom: 10px;
-    }
-    
-    .key-actions {
-      display: flex;
-      gap: 8px;
-    }
-    
-    .key-actions button {
-      flex: 1;
-      padding: 8px;
-      border: none;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .btn-share {
-      background: #2ed573;
-      color: white;
-    }
-    
-    .btn-share:disabled {
-      background: #a8a8a8;
-      cursor: not-allowed;
-    }
-    
-    .btn-share.shared {
-      background: #747d8c;
-    }
-    
-    .btn-delete {
-      background: #ff4757;
-      color: white;
-    }
-
-    .btn-edit {
-      background: #3742fa;
-      color: white;
-    }
-
-    .btn-unshare {
-      background: #ffa502;
-      color: white;
-    }
-
-    .btn-share-all {
-      background: #3742fa;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-bottom: 15px;
-    }
-    
-    .btn-share-all:disabled {
-      background: #a8a8a8;
-      cursor: not-allowed;
-    }
-    
-    .shared-indicator {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      background: #2ed573;
-      color: white;
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 12px;
-      margin-left: 8px;
-    }
-    
-    .unshared-indicator {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      background: #ffa502;
-      color: white;
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 12px;
-      margin-left: 8px;
-    }
-    
-    .key-item.shared {
-      border-left: 4px solid #2ed573;
-    }
-    
-    .key-item.unshared {
-      border-left: 4px solid #ffa502;
-    }
-    
-    .add-key-form {
-      background: #f8f9fa;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-      display: none;
-    }
-    
-    .add-key-form.active {
-      display: block;
-    }
-    
-    .alert {
-      padding: 12px 15px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      font-size: 14px;
-    }
-    
-    .alert-success {
-      background: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-    }
-    
-    .alert-error {
-      background: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-    
-    .connection-status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: #666;
-      margin-bottom: 15px;
-    }
-    
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #ff4757;
-    }
-    
-    .status-dot.connected {
-      background: #2ed573;
-    }
-    
-    .empty-state {
-      text-align: center;
-      padding: 40px;
-      color: #666;
-    }
-    
-    .empty-state svg {
-      width: 80px;
-      height: 80px;
-      margin-bottom: 15px;
-      opacity: 0.3;
-    }
-    
-    .warning-badge {
-      background: #ffa502;
-      color: white;
-      font-size: 10px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      margin-left: 8px;
-    }
-    
-    .progress-bar {
-      height: 4px;
-      background: #e0e0e0;
-      border-radius: 2px;
-      margin-top: 10px;
-      overflow: hidden;
-    }
-    
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      transition: width 0.3s;
-    }
-    
-    .info-text {
-      font-size: 13px;
-      color: #666;
-      margin-top: 15px;
-      text-align: center;
-    }
-    
-    .info-text strong {
-      color: #333;
-    }
-    
-    .password-requirements {
-      margin-top: 10px;
-      padding: 12px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      font-size: 12px;
-    }
-    
-    .req-item {
-      color: #666;
-      margin: 4px 0;
-      transition: color 0.3s;
-    }
-    
-    .req-item.valid {
-      color: #2ed573;
-    }
-    
-    .req-item.invalid {
-      color: #ff4757;
-    }
-    
-    .connect-screen {
-      display: none;
-    }
-    
-    .connect-screen.active {
-      display: block;
-    }
-    
-    .clawbot-icon {
+    /* Additional component styles */
+    .lock-animation {
       font-size: 64px;
-      text-align: center;
-      margin: 20px 0;
+      margin-bottom: 24px;
+      animation: pulse 2s ease-in-out infinite;
     }
     
-    .key-validation {
-      margin-top: 8px;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      display: none;
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
     }
     
-    .key-validation.valid {
-      background: #d4edda;
-      color: #155724;
-      display: block;
-    }
-    
-    .key-validation.invalid {
-      background: #f8d7da;
-      color: #721c24;
-      display: block;
-    }
-    
-    .key-validation.warning {
-      background: #fff3cd;
-      color: #856404;
-      display: block;
-    }
-    
-    .settings-screen {
-      display: none;
-    }
-    
-    .settings-screen.active {
-      display: block;
-    }
-    
-    .settings-section {
-      background: #f8f9fa;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-    
-    .settings-section h3 {
-      margin-bottom: 15px;
-      color: #333;
-      font-size: 16px;
-    }
-    
-    .danger-zone {
-      background: #fff5f5;
-      border: 1px solid #ff4757;
-      border-radius: 12px;
-      padding: 20px;
-      margin-top: 20px;
-    }
-    
-    .danger-zone h3 {
-      color: #ff4757;
-      margin-bottom: 10px;
-    }
-    
-    .danger-zone p {
-      color: #666;
-      font-size: 13px;
-      margin-bottom: 15px;
-    }
-    
-    .vault-nav {
+    .vault-actions {
       display: flex;
-      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    
+    .vault-actions .btn {
+      flex: 1;
+    }
+    
+    .security-tips {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-top: 24px;
+    }
+    
+    .security-tips h4 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      display: flex;
       align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid #e0e0e0;
+      gap: 8px;
     }
     
-    .vault-nav h2 {
-      font-size: 20px;
-      color: #333;
-    }
-    
-    .nav-buttons {
-      display: flex;
-      gap: 10px;
-    }
-    
-    .nav-btn {
-      padding: 8px 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
+    .security-tips ul {
+      list-style: none;
       font-size: 13px;
-      font-weight: 600;
+      color: var(--text-muted);
+    }
+    
+    .security-tips li {
+      padding: 4px 0;
+      padding-left: 20px;
+      position: relative;
+    }
+    
+    .security-tips li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--success);
+    }
+    
+    .reveal-code {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 12px;
+      background: var(--bg-primary);
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      word-break: break-all;
+      color: var(--accent-primary);
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      background: var(--bg-secondary);
+      padding: 4px;
+      border-radius: var(--radius-md);
+    }
+    
+    .tab {
+      flex: 1;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
       transition: all 0.2s;
     }
     
-    .nav-btn:hover {
-      transform: translateY(-1px);
+    .tab.active {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
     }
     
-    .nav-btn-primary {
-      background: #667eea;
-      color: white;
-    }
-    
-    .nav-btn-secondary {
-      background: #f0f0f0;
-      color: #333;
-    }
-    
-    .nav-btn-danger {
-      background: #ff4757;
-      color: white;
-    }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>🔐 AgentVault</h1>
-      <p>Secure credential manager for AI agents</p>
+      <div class="logo">
+        <div class="logo-icon">🔐</div>
+        <h1>AgentVault</h1>
+      </div>
+      <p>Secure credential management for AI agents</p>
     </div>
     
     <div class="content">
       <!-- Setup Screen -->
       <div class="setup-screen active" id="setupScreen">
-        <h2 style="margin-bottom: 20px; color: #333;">Welcome to AgentVault</h2>
-        <p style="color: #666; margin-bottom: 25px; line-height: 1.6;">
-          Your local, encrypted vault for API keys and passwords. 
-          <strong>Your data never leaves your machine.</strong>
-        </p>
+        <div style="text-align: center; margin-bottom: 32px;">
+          <div class="lock-animation">🔐</div>
+          <h2 style="font-size: 20px; margin-bottom: 8px;">Create Your Vault</h2>
+          <p style="color: var(--text-muted);">Set a master password to secure your credentials</p>
+        </div>
         
         <div class="input-group">
-          <label>Create Master Password</label>
-          <input type="password" id="setupPassword" placeholder="Create secure password" onkeyup="checkPasswordStrength()">
-          <div class="password-requirements" id="passwordRequirements">
-            <div class="req-item" id="req-length">✗ At least 8 characters</div>
-            <div class="req-item" id="req-upper">✗ One uppercase letter (A-Z)</div>
-            <div class="req-item" id="req-lower">✗ One lowercase letter (a-z)</div>
-            <div class="req-item" id="req-number">✗ One number (0-9)</div>
-            <div class="req-item" id="req-symbol">✗ One symbol (!@#$%^&*)</div>
+          <label>Master Password</label>
+          <div class="input-wrapper">
+            <input type="password" id="setupPassword" placeholder="Create a strong password">
+            <button class="password-toggle" onclick="togglePassword('setupPassword')">👁️</button>
+          </div>
+          <div class="password-strength" id="passwordStrength">
+            <div class="password-strength-bar"></div>
           </div>
         </div>
         
         <div class="input-group">
           <label>Confirm Password</label>
-          <input type="password" id="confirmPassword" placeholder="Confirm your password">
+          <div class="input-wrapper">
+            <input type="password" id="confirmPassword" placeholder="Confirm your password">
+            <button class="password-toggle" onclick="togglePassword('confirmPassword')">👁️</button>
+          </div>
         </div>
         
-        <button class="btn btn-primary" id="createVaultBtn" onclick="initializeVault()">Create Vault</button>
+        <button class="btn btn-primary" id="createVaultBtn" onclick="createVault()">
+          Create Vault
+        </button>
         
-        <div class="info-text">
-          <strong>🔒 Security:</strong> Your password is used to encrypt all data.
-          <br>It is never stored or transmitted.
-        </div>
-      </div>
-      
-      <!-- Connect Screen -->
-      <div class="connect-screen" id="connectScreen">
-        <div class="clawbot-icon">🦞</div>
-        <h2 style="margin-bottom: 15px; color: #333; text-align: center;">Connect to OpenClaw</h2>
-        <p style="color: #666; margin-bottom: 25px; line-height: 1.6; text-align: center;">
-          AgentVault is ready! Now connect with your AI assistant to securely share keys.
-        </p>
-        
-        <div id="connectionStatus" style="text-align: center; margin-bottom: 20px;">
-          <div class="status-dot" id="connectStatusDot" style="margin: 0 auto 10px;"></div>
-          <p id="connectStatusText" style="color: #666; font-size: 14px;">Waiting for connection...</p>
-        </div>
-        
-        <button class="btn btn-primary" onclick="connectToOpenClaw()">Connect to OpenClaw Agent</button>
-        <button class="btn btn-secondary" onclick="skipConnection()">Skip for now</button>
-        
-        <div class="info-text" style="margin-top: 20px;">
-          <strong>ℹ️ Tip:</strong> You can connect later from the vault screen.
+        <div class="security-tips">
+          <h4>🔒 Security Tips</h4>
+          <ul>
+            <li>Use at least 12 characters</li>
+            <li>Include numbers and symbols</li>
+            <li>Store your password in a safe place</li>
+            <li>We cannot recover lost passwords</li>
+          </ul>
         </div>
       </div>
       
       <!-- Unlock Screen -->
       <div class="unlock-screen" id="unlockScreen">
-        <div style="text-align: center; margin-bottom: 25px;">
-          <div style="font-size: 48px; margin-bottom: 10px;">🔒</div>
-          <h2 style="color: #333;">Vault Locked</h2>
-          <p style="color: #666; font-size: 14px; margin-top: 8px;">Enter your master password to unlock</p>
+        <div style="text-align: center; margin-bottom: 32px;">
+          <div class="lock-animation">🔒</div>
+          <h2 style="font-size: 20px; margin-bottom: 8px;">Vault Locked</h2>
+          <p style="color: var(--text-muted);">Enter your master password to unlock</p>
         </div>
         
         <div class="input-group">
           <label>Master Password</label>
-          <input type="password" id="unlockPassword" placeholder="Enter your password" onkeypress="handleUnlockKeypress(event)">
+          <div class="input-wrapper">
+            <input type="password" id="unlockPassword" placeholder="Enter your password" onkeypress="if(event.key==='Enter')unlockVault()">
+            <button class="password-toggle" onclick="togglePassword('unlockPassword')">👁️</button>
+          </div>
         </div>
         
-        <button class="btn btn-primary" id="unlockBtn" onclick="unlockVault()">🔓 Unlock Vault</button>
-        
-        <div class="progress-bar" style="margin-top: 20px;">
-          <div class="progress-fill" id="keyCountBar" style="width: 0%"></div>
-        </div>
-        <p class="info-text" id="keyCountText">0 / 20 keys stored</p>
-        
-        <button class="btn btn-secondary" onclick="resetVault()" style="margin-top: 20px; font-size: 12px;">
-          ⚠️ Reset Vault (Delete All Data)
+        <button class="btn btn-primary" id="unlockBtn" onclick="unlockVault()">
+          Unlock Vault
         </button>
       </div>
       
       <!-- Vault Screen -->
       <div class="vault-screen" id="vaultScreen">
-        <div class="connection-status">
-          <div class="status-dot" id="connectionDot"></div>
-          <span id="connectionText">OpenClaw disconnected</span>
+        <div class="vault-actions">
+          <button class="btn btn-primary" onclick="openAddModal()">
+            <span>+</span> Add Credential
+          </button>
+          <button class="btn btn-secondary" onclick="lockVault()">
+            <span>🔒</span> Lock
+          </button>
         </div>
         
-        <div class="vault-header">
-          <h2>Your Keys</h2>
-          <div class="key-count" id="vaultKeyCount">0/20</div>
+        <div id="credentialList" class="credential-list">
+          <!-- Credentials loaded here -->
         </div>
         
-        <button class="btn-share-all" id="shareAllBtn" onclick="shareAllKeys()" disabled>
-          📤 Share All Unshared Keys
-        </button>
-        <p id="shareAllStatus" style="font-size: 12px; color: #666; margin-bottom: 15px; display: none;"></p>
-        
-        <div class="add-key-form" id="addKeyForm">
-          <h3 style="margin-bottom: 15px; color: #333;">Add New Key</h3>
-          
-          <div class="input-group">
-            <label>Key Name</label>
-            <input type="text" id="keyName" placeholder="e.g., Supabase Production">
-          </div>
-          
-          <div class="input-group">
-            <label>Service</label>
-            <select id="keyService" onchange="onServiceChange()">
-              <option value="">Select service...</option>
-              <optgroup label="Social Media">
-                <option value="twitter">X (Twitter)</option>
-              </optgroup>
-              <optgroup label="Cloud & Hosting">
-                <option value="aws">AWS</option>
-                <option value="render">Render</option>
-                <option value="vercel">Vercel</option>
-                <option value="cloudflare">Cloudflare</option>
-                <option value="digitalocean">DigitalOcean</option>
-                <option value="firebase">Firebase</option>
-              </optgroup>
-              <optgroup label="Databases">
-                <option value="supabase">Supabase</option>
-                <option value="postgres">PostgreSQL</option>
-                <option value="mysql">MySQL</option>
-                <option value="mongodb">MongoDB</option>
-                <option value="redis">Redis</option>
-              </optgroup>
-              <optgroup label="AI & LLMs">
-                <option value="openai">OpenAI</option>
-                <option value="anthropic">Anthropic (Claude)</option>
-                <option value="moonshot">Moonshot (Kimi)</option>
-                <option value="elevenlabs">ElevenLabs</option>
-                <option value="deepgram">Deepgram</option>
-              </optgroup>
-              <optgroup label="Our Products">
-                <option value="moltbook">Moltbook</option>
-                <option value="openclaw">OpenClaw</option>
-                <option value="agentvault">AgentVault</option>
-                <option value="agentdiplomacy">AgentDiplomacy</option>
-                <option value="memorybridge">MemoryBridge</option>
-              </optgroup>
-              <optgroup label="Communication">
-                <option value="telegram">Telegram</option>
-                <option value="slack">Slack</option>
-                <option value="discord">Discord</option>
-                <option value="twilio">Twilio</option>
-                <option value="sendgrid">SendGrid</option>
-              </optgroup>
-              <optgroup label="Dev Tools">
-                <option value="github">GitHub</option>
-                <option value="google">Google APIs</option>
-                <option value="notion">Notion</option>
-                <option value="figma">Figma</option>
-              </optgroup>
-              <optgroup label="Other">
-                <option value="stripe">Stripe</option>
-                <option value="other">Other</option>
-              </optgroup>
-            </select>
-          </div>
-          
-          <div class="input-group">
-            <label>URL (optional)</label>
-            <input type="text" id="keyUrl" placeholder="e.g., https://project.supabase.co">
-          </div>
-          
-          <!-- Dynamic credential fields container -->
-          <div id="dynamicFields">
-            <div class="input-group">
-              <label>Secret Value</label>
-              <input type="password" id="keyValue" placeholder="Paste your API key here" onkeyup="validateKeyPattern()">
-              <div class="key-validation" id="keyValidation"></div>
-            </div>
-          </div>
-          
-          <!-- X/Twitter specific fields (hidden by default) -->
-          <div id="twitterFields" style="display: none;">
-            <div class="input-group">
-              <label>OAuth 1.0a - API Key (Consumer Key)</label>
-              <input type="password" id="twitterApiKey" placeholder="Your API Key">
-            </div>
-            <div class="input-group">
-              <label>OAuth 1.0a - API Secret (Consumer Secret)</label>
-              <input type="password" id="twitterApiSecret" placeholder="Your API Secret">
-            </div>
-            <div class="input-group">
-              <label>OAuth 1.0a - Access Token</label>
-              <input type="password" id="twitterAccessToken" placeholder="Your Access Token">
-            </div>
-            <div class="input-group">
-              <label>OAuth 1.0a - Access Token Secret</label>
-              <input type="password" id="twitterAccessTokenSecret" placeholder="Your Access Token Secret">
-            </div>
-            <div class="input-group">
-              <label>OAuth 2.0 - Bearer Token</label>
-              <input type="password" id="twitterBearerToken" placeholder="Your Bearer Token">
-            </div>
-            <div class="input-group">
-              <label>Client ID (OAuth 2.0)</label>
-              <input type="password" id="twitterClientId" placeholder="Your Client ID">
-            </div>
-            <div class="input-group">
-              <label>Client Secret (OAuth 2.0)</label>
-              <input type="password" id="twitterClientSecret" placeholder="Your Client Secret">
-            </div>
-          </div>
-          
-          <div class="input-group" style="display: flex; align-items: center; gap: 8px;">
-            <input type="checkbox" id="autoShareKey" style="width: auto;">
-            <label for="autoShareKey" style="margin: 0; font-weight: normal;">
-              Share with OpenClaw Agent immediately
-            </label>
-          </div>
-          
-          <button class="btn btn-primary" onclick="addKey()">Save Key</button>
-          <button class="btn btn-secondary" onclick="toggleAddForm()">Cancel</button>
+        <div class="empty-state" id="emptyState" style="display: none;">
+          <div class="empty-state-icon">🔑</div>
+          <h3>No credentials yet</h3>
+          <p>Add your first API key or password</p>
         </div>
-
-        <!-- Edit Key Form (hidden by default) -->
-        <div class="add-key-form" id="editKeyForm">
-          <h3 style="margin-bottom: 15px; color: #333;">Edit Key</h3>
-
-          <div class="input-group">
-            <label>Key Name</label>
-            <input type="text" id="editKeyName" placeholder="e.g., Supabase Production">
-          </div>
-
-          <div class="input-group">
-            <label>Service</label>
-            <select id="editKeyService">
-              <option value="">Select service...</option>
-              <optgroup label="Social Media">
-                <option value="twitter">X (Twitter)</option>
-              </optgroup>
-              <optgroup label="Cloud & Hosting">
-                <option value="aws">AWS</option>
-                <option value="render">Render</option>
-                <option value="vercel">Vercel</option>
-                <option value="cloudflare">Cloudflare</option>
-                <option value="digitalocean">DigitalOcean</option>
-                <option value="firebase">Firebase</option>
-              </optgroup>
-              <optgroup label="Databases">
-                <option value="supabase">Supabase</option>
-                <option value="postgres">PostgreSQL</option>
-                <option value="mysql">MySQL</option>
-                <option value="mongodb">MongoDB</option>
-                <option value="redis">Redis</option>
-              </optgroup>
-              <optgroup label="AI & LLMs">
-                <option value="openai">OpenAI</option>
-                <option value="anthropic">Anthropic (Claude)</option>
-                <option value="moonshot">Moonshot (Kimi)</option>
-                <option value="elevenlabs">ElevenLabs</option>
-                <option value="deepgram">Deepgram</option>
-              </optgroup>
-              <optgroup label="Our Products">
-                <option value="moltbook">Moltbook</option>
-                <option value="openclaw">OpenClaw</option>
-                <option value="agentvault">AgentVault</option>
-                <option value="agentdiplomacy">AgentDiplomacy</option>
-                <option value="memorybridge">MemoryBridge</option>
-              </optgroup>
-              <optgroup label="Communication">
-                <option value="telegram">Telegram</option>
-                <option value="slack">Slack</option>
-                <option value="discord">Discord</option>
-                <option value="twilio">Twilio</option>
-                <option value="sendgrid">SendGrid</option>
-              </optgroup>
-              <optgroup label="Dev Tools">
-                <option value="github">GitHub</option>
-                <option value="google">Google APIs</option>
-                <option value="notion">Notion</option>
-                <option value="figma">Figma</option>
-              </optgroup>
-              <optgroup label="Other">
-                <option value="stripe">Stripe</option>
-                <option value="other">Other</option>
-              </optgroup>
-            </select>
-          </div>
-
-          <div class="input-group">
-            <label>URL (optional)</label>
-            <input type="text" id="editKeyUrl" placeholder="e.g., https://project.supabase.co">
-          </div>
-
-          <div class="input-group">
-            <label>Secret Value</label>
-            <input type="password" id="editKeyValue" placeholder="New API key value">
-          </div>
-
-          <div class="input-group" style="display: flex; align-items: center; gap: 8px;">
-            <input type="checkbox" id="editResetRotation" style="width: auto;">
-            <label for="editResetRotation" style="margin: 0; font-weight: normal;">
-              Reset rotation timer (mark as freshly rotated)
-            </label>
-          </div>
-
-          <button class="btn btn-primary" id="saveEditBtn" onclick="saveEditedKey()">Save Changes</button>
-          <button class="btn btn-secondary" onclick="hideEditForm()">Cancel</button>
-        </div>
-
-        <button class="btn btn-primary" id="showAddBtn" onclick="toggleAddForm()" style="margin-bottom: 20px;">
-          + Add New Key
-        </button>
-        
-        <div id="alerts"></div>
-        
-        <div class="key-list" id="keyList">
-          <!-- Keys will be loaded here -->
-        </div>
-        
-        <button class="btn btn-secondary" onclick="lockVault()" style="margin-top: 20px; border: 2px solid #667eea;">
-          🔒 Lock Vault
-        </button>
       </div>
     </div>
   </div>
+  
+  <!-- Add Credential Modal -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Add Credential</h2>
+        <p>Store a new API key or password securely</p>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label>Service</label>
+          <select id="serviceSelect" onchange="onServiceChange()">
+            <option value="">Select a service...</option>
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic</option>
+            <option value="github">GitHub</option>
+            <option value="render">Render</option>
+            <option value="twitter">X/Twitter</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        
+        <div class="input-group">
+          <label>Name (optional)</label>
+          <input type="text" id="credName" placeholder="e.g., Production API Key">
+        </div>
+        
+        <div id="customServiceGroup" class="input-group hidden">
+          <label>Custom Service Name</label>
+          <input type="text" id="customService" placeholder="Service name">
+        </div>
+        
+        <div id="fieldsContainer">
+          <!-- Dynamic fields based on service -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
+        <button class="btn btn-primary" id="saveCredBtn" onclick="saveCredential()">Save Credential</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
 
   <script>
-    // State
-    let ws = null;
-    let keys = [];
-    let passwordValid = false;
-    
-    // Password validation patterns
-    const patterns = {
-      length: /.{8,}/,
-      upper: /[A-Z]/,
-      lower: /[a-z]/,
-      number: /[0-9]/,
-      symbol: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/
+    // Service configurations
+    const serviceConfigs = {
+      openai: {
+        icon: '🤖',
+        fields: [{ name: 'apiKey', label: 'API Key', type: 'password', placeholder: 'sk-...' }]
+      },
+      anthropic: {
+        icon: '🧠',
+        fields: [{ name: 'apiKey', label: 'API Key', type: 'password', placeholder: 'sk-ant-...' }]
+      },
+      github: {
+        icon: '🐙',
+        fields: [{ name: 'token', label: 'Personal Access Token', type: 'password', placeholder: 'ghp_...' }]
+      },
+      render: {
+        icon: '⚡',
+        fields: [
+          { name: 'apiKey', label: 'API Key', type: 'password', placeholder: 'rnd_...' },
+          { name: 'serviceId', label: 'Service ID (optional)', type: 'text', placeholder: 'srv-...' }
+        ]
+      },
+      twitter: {
+        icon: '🐦',
+        fields: [
+          { name: 'apiKey', label: 'API Key', type: 'password' },
+          { name: 'apiSecret', label: 'API Secret', type: 'password' },
+          { name: 'accessToken', label: 'Access Token', type: 'password' },
+          { name: 'accessSecret', label: 'Access Token Secret', type: 'password' },
+          { name: 'bearerToken', label: 'Bearer Token (optional)', type: 'password' }
+        ]
+      },
+      custom: {
+        icon: '🔑',
+        fields: [
+          { name: 'key', label: 'Key / Value', type: 'password', placeholder: 'Enter value' }
+        ]
+      }
     };
     
-    // Key patterns by service
-    const keyPatterns = {
-      // Cloud & Hosting
-      aws: /^AKIA[A-Z0-9]{16}$/,
-      render: /^rnd_[a-zA-Z0-9]{25,}$/,
-      vercel: /^[a-zA-Z0-9]{24}$/,
-      cloudflare: /^[a-f0-9]{37}$/,
-      digitalocean: /^dop_v1_[a-f0-9]{64}$/,
-      firebase: /^AIza[0-9A-Za-z_-]{35}$/,
-      
-      // Databases
-      supabase: /^sb_[a-z]+_[A-Za-z0-9]{40,}$/,
-      postgres: /^postgres:\/\//,
-      mysql: /^mysql:\/\//,
-      mongodb: /^mongodb(\+srv)?:\/\//,
-      redis: /^rediss?:\/\//,
-      
-      // AI & LLMs
-      openai: /^sk-[A-Za-z0-9]{32,}$/,
-      anthropic: /^sk-ant-[a-zA-Z0-9]{48,}$/,
-      moonshot: /^[a-f0-9]{32}$/,
-      elevenlabs: /^[a-f0-9]{32}$/,
-      deepgram: /^[a-f0-9]{32}$/,
-      
-      // Communication
-      telegram: /^[0-9]{8,10}:[A-Za-z0-9_-]{35}$/,
-      slack: /^xox[baprs]-[0-9]{10,13}-[0-9]{10,13}(-[a-zA-Z0-9]{24})?$/,
-      discord: /^[A-Za-z0-9_-]{20,30}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27}$/,
-      twilio: /^SK[0-9a-f]{32}$|^AC[0-9a-f]{32}$/,
-      sendgrid: /^SG\.[A-Za-z0-9]{22}\.[A-Za-z0-9]{43}$/,
-      
-      // Dev Tools
-      github: /^ghp_[A-Za-z0-9]{36}$|^gho_[A-Za-z0-9]{36}$|^github_pat_[A-Za-z0-9]{22}_[A-Za-z0-9]{59}$/,
-      google: /^AIza[0-9A-Za-z_-]{35}$/,
-      notion: /^secret_[A-Za-z0-9]{43}$/,
-      figma: /^figd_[A-Za-z0-9]{40}$/
-    };
+    let vaultState = { initialized: false, unlocked: false };
+    let credentials = [];
     
-    // Service display names
-    const serviceDisplayNames = {
-      // Social Media
-      twitter: 'X (Twitter)',
-      
-      // Cloud & Hosting
-      aws: 'AWS',
-      render: 'Render',
-      vercel: 'Vercel',
-      cloudflare: 'Cloudflare',
-      digitalocean: 'DigitalOcean',
-      firebase: 'Firebase',
-      
-      // Databases
-      supabase: 'Supabase',
-      postgres: 'PostgreSQL',
-      mysql: 'MySQL',
-      mongodb: 'MongoDB',
-      redis: 'Redis',
-      
-      // AI & LLMs
-      openai: 'OpenAI',
-      anthropic: 'Anthropic',
-      moonshot: 'Moonshot',
-      elevenlabs: 'ElevenLabs',
-      deepgram: 'Deepgram',
-      
-      // Our Products
-      moltbook: 'Moltbook',
-      openclaw: 'OpenClaw',
-      agentvault: 'AgentVault',
-      agentdiplomacy: 'AgentDiplomacy',
-      memorybridge: 'MemoryBridge',
-      
-      // Communication
-      telegram: 'Telegram',
-      slack: 'Slack',
-      discord: 'Discord',
-      twilio: 'Twilio',
-      sendgrid: 'SendGrid',
-      
-      // Dev Tools
-      github: 'GitHub',
-      google: 'Google APIs',
-      notion: 'Notion',
-      figma: 'Figma',
-      
-      // Other
-      stripe: 'Stripe',
-      other: 'Other'
-    };
-    
-    // Check password strength
-    function checkPasswordStrength() {
-      const password = document.getElementById('setupPassword').value;
-      let valid = true;
-      
-      // Check each requirement
-      const lengthValid = patterns.length.test(password);
-      const upperValid = patterns.upper.test(password);
-      const lowerValid = patterns.lower.test(password);
-      const numberValid = patterns.number.test(password);
-      const symbolValid = patterns.symbol.test(password);
-      
-      document.getElementById('req-length').textContent = (lengthValid ? '✓' : '✗') + ' At least 8 characters';
-      document.getElementById('req-length').className = 'req-item ' + (lengthValid ? 'valid' : 'invalid');
-      
-      document.getElementById('req-upper').textContent = (upperValid ? '✓' : '✗') + ' One uppercase letter (A-Z)';
-      document.getElementById('req-upper').className = 'req-item ' + (upperValid ? 'valid' : 'invalid');
-      
-      document.getElementById('req-lower').textContent = (lowerValid ? '✓' : '✗') + ' One lowercase letter (a-z)';
-      document.getElementById('req-lower').className = 'req-item ' + (lowerValid ? 'valid' : 'invalid');
-      
-      document.getElementById('req-number').textContent = (numberValid ? '✓' : '✗') + ' One number (0-9)';
-      document.getElementById('req-number').className = 'req-item ' + (numberValid ? 'valid' : 'invalid');
-      
-      document.getElementById('req-symbol').textContent = (symbolValid ? '✓' : '✗') + ' One symbol (!@#$%^&*)';
-      document.getElementById('req-symbol').className = 'req-item ' + (symbolValid ? 'valid' : 'invalid');
-      
-      // Check if all valid
-      valid = lengthValid && upperValid && lowerValid && numberValid && symbolValid;
-      
-      passwordValid = valid;
-      return valid;
+    // Initialize
+    async function init() {
+      await checkStatus();
+      setupPasswordStrength();
     }
     
-    // Validate key pattern against selected service
-    function validateKeyPattern() {
-      const service = document.getElementById('keyService').value;
-      const value = document.getElementById('keyValue').value;
-      const validationDiv = document.getElementById('keyValidation');
-      
-      if (!service || !value) {
-        validationDiv.style.display = 'none';
-        return true;
-      }
-      
-      const pattern = keyPatterns[service];
-      if (!pattern) {
-        validationDiv.style.display = 'none';
-        return true;
-      }
-      
-      const isValid = pattern.test(value);
-      const serviceDisplay = serviceDisplayNames[service] || service;
-      
-      if (isValid) {
-        validationDiv.className = 'key-validation valid';
-        validationDiv.textContent = `✓ Valid ${serviceDisplay} key format`;
-      } else {
-        validationDiv.className = 'key-validation invalid';
-        validationDiv.textContent = `⚠️ This doesn't look like a ${serviceDisplay} key. Wrong format or wrong service selected.`;
-      }
-      
-      return isValid;
-    }
-    
-    // Handle service selection change
-    function onServiceChange() {
-      const service = document.getElementById('keyService').value;
-      const dynamicFields = document.getElementById('dynamicFields');
-      const twitterFields = document.getElementById('twitterFields');
-      
-      // Reset validation
-      validateKeyPattern();
-      
-      // Show/hide Twitter-specific fields
-      if (service === 'twitter') {
-        dynamicFields.style.display = 'none';
-        twitterFields.style.display = 'block';
-      } else {
-        dynamicFields.style.display = 'block';
-        twitterFields.style.display = 'none';
-      }
-    }
-    
-    // Check vault status on load
     async function checkStatus() {
-      console.log('checkStatus called');
       try {
-        const response = await fetch('/api/status');
-        const status = await response.json();
-        console.log('Status:', status);
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        vaultState = data;
         
-        if (!status.initialized) {
-          console.log('Showing setup screen');
+        if (!data.initialized) {
           showScreen('setup');
-        } else if (!status.unlocked) {
-          console.log('Showing unlock screen');
+        } else if (!data.unlocked) {
           showScreen('unlock');
-          updateKeyCount(status.keyCount, status.maxKeys);
-          // Focus password field
-          setTimeout(() => {
-            const passwordField = document.getElementById('unlockPassword');
-            if (passwordField) passwordField.focus();
-          }, 100);
         } else {
-          console.log('Showing vault screen');
           showScreen('vault');
-          loadKeys();
-          connectWebSocket();
+          await loadCredentials();
         }
-      } catch (e) {
-        console.error('checkStatus error:', e);
-        showAlert('Failed to connect to AgentVault server', 'error');
+      } catch (err) {
+        showToast('Failed to connect to server', 'error');
       }
     }
     
     function showScreen(screen) {
-      document.querySelectorAll('.setup-screen, .unlock-screen, .vault-screen, .connect-screen').forEach(el => {
-        el.classList.remove('active');
-      });
+      document.querySelectorAll('.setup-screen, .unlock-screen, .vault-screen').forEach(s => s.classList.remove('active'));
       document.getElementById(screen + 'Screen').classList.add('active');
+    }
+    
+    function togglePassword(id) {
+      const input = document.getElementById(id);
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+    
+    function setupPasswordStrength() {
+      const input = document.getElementById('setupPassword');
+      const bar = document.querySelector('#passwordStrength .password-strength-bar');
       
-      // Reset unlock button when showing unlock screen
-      if (screen === 'unlock') {
-        const unlockBtn = document.getElementById('unlockBtn');
-        if (unlockBtn) {
-          unlockBtn.textContent = '🔓 Unlock Vault';
-          unlockBtn.disabled = false;
-        }
-        const passwordField = document.getElementById('unlockPassword');
-        if (passwordField) {
-          passwordField.value = '';
-        }
-      }
+      input.addEventListener('input', () => {
+        const val = input.value;
+        let strength = 0;
+        if (val.length >= 8) strength++;
+        if (val.length >= 12) strength++;
+        if (/[A-Z]/.test(val)) strength++;
+        if (/[0-9]/.test(val)) strength++;
+        if (/[^A-Za-z0-9]/.test(val)) strength++;
+        
+        bar.className = 'password-strength-bar';
+        if (strength <= 2) bar.classList.add('strength-weak');
+        else if (strength <= 4) bar.classList.add('strength-medium');
+        else bar.classList.add('strength-strong');
+      });
     }
     
-    function connectToOpenClaw() {
-      connectWebSocket();
-      showScreen('vault');
-      loadKeys();
-    }
-    
-    function skipConnection() {
-      showScreen('vault');
-      loadKeys();
-    }
-    
-    function updateKeyCount(count, max) {
-      document.getElementById('keyCountBar').style.width = (count / max * 100) + '%';
-      document.getElementById('keyCountText').textContent = `${count} / ${max} keys stored`;
-      document.getElementById('vaultKeyCount').textContent = `${count}/${max}`;
-    }
-    
-    async function initializeVault() {
-      console.log('initializeVault called');
+    async function createVault() {
       const password = document.getElementById('setupPassword').value;
       const confirm = document.getElementById('confirmPassword').value;
       
-      console.log('Password entered:', password ? 'yes' : 'no');
-      
-      // Validate password requirements
-      const lengthValid = patterns.length.test(password);
-      const upperValid = patterns.upper.test(password);
-      const lowerValid = patterns.lower.test(password);
-      const numberValid = patterns.number.test(password);
-      const symbolValid = patterns.symbol.test(password);
-      const allValid = lengthValid && upperValid && lowerValid && numberValid && symbolValid;
-      
-      console.log('Validation:', {lengthValid, upperValid, lowerValid, numberValid, symbolValid, allValid});
-      
-      if (!allValid) {
-        showAlert('Password does not meet requirements. Need: 8+ chars, uppercase, lowercase, number, symbol.', 'error');
+      if (!password || password.length < 8) {
+        showToast('Password must be at least 8 characters', 'error');
         return;
       }
-      
       if (password !== confirm) {
-        showAlert('Passwords do not match', 'error');
+        showToast('Passwords do not match', 'error');
         return;
       }
       
-      console.log('Sending init request...');
+      const btn = document.getElementById('createVaultBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div> Creating...';
+      
       try {
-        const response = await fetch('/api/init', {
+        const res = await fetch('/api/init', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password })
         });
+        const data = await res.json();
         
-        console.log('Response:', response.status);
-        
-        if (response.ok) {
-          console.log('Vault created, showing connect screen');
-          showScreen('connect');
+        if (data.success) {
+          showToast('Vault created successfully!', 'success');
+          await checkStatus();
         } else {
-          const error = await response.json();
-          showAlert(error.error, 'error');
+          showToast(data.error || 'Failed to create vault', 'error');
         }
-      } catch (e) {
-        console.error('Error:', e);
-        showAlert('Failed to create vault: ' + e.message, 'error');
-      }
-    }
-    
-    function handleUnlockKeypress(event) {
-      if (event.key === 'Enter') {
-        unlockVault();
+      } catch (err) {
+        showToast('Failed to create vault', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Create Vault';
       }
     }
     
     async function unlockVault() {
       const password = document.getElementById('unlockPassword').value;
-      const btn = document.getElementById('unlockBtn');
-      
       if (!password) {
-        showAlert('Please enter your password', 'error');
+        showToast('Please enter your password', 'error');
         return;
       }
       
-      // Show loading state
-      const originalText = btn.textContent;
-      btn.textContent = '🔓 Unlocking...';
+      const btn = document.getElementById('unlockBtn');
       btn.disabled = true;
-      
-      // Create abort controller for timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      btn.innerHTML = '<div class="spinner"></div> Unlocking...';
       
       try {
-        const response = await fetch('/api/unlock', {
+        const res = await fetch('/api/unlock', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password }),
-          signal: controller.signal
+          body: JSON.stringify({ password })
         });
+        const data = await res.json();
         
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          showScreen('vault');
-          loadKeys();
-          connectWebSocket();
-          showAlert('✅ Vault unlocked successfully', 'success');
+        if (data.success) {
+          showToast('Vault unlocked', 'success');
+          await checkStatus();
         } else {
-          const error = await response.json();
-          showAlert('❌ ' + (error.error || 'Invalid password'), 'error');
-          btn.textContent = originalText;
-          btn.disabled = false;
+          showToast('Invalid password', 'error');
         }
-      } catch (e) {
-        clearTimeout(timeoutId);
-        if (e.name === 'AbortError') {
-          showAlert('❌ Request timed out. Server may be busy.', 'error');
-        } else {
-          showAlert('❌ Failed to unlock vault: ' + e.message, 'error');
-        }
-        btn.textContent = originalText;
+      } catch (err) {
+        showToast('Failed to unlock', 'error');
+      } finally {
         btn.disabled = false;
-      }
-    }
-    
-    async function resetVault() {
-      if (!confirm('⚠️ WARNING: This will DELETE ALL KEYS and reset the vault.\n\nThis action cannot be undone.\n\nAre you sure?')) {
-        return;
-      }
-      
-      if (!confirm('Final confirmation: ALL YOUR KEYS WILL BE LOST FOREVER.\n\nType "DELETE" to confirm:')) {
-        return;
-      }
-      
-      try {
-        const response = await fetch('/api/reset', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        
-        if (response.ok) {
-          showAlert('Vault reset. Please refresh the page.', 'success');
-          setTimeout(() => location.reload(), 1500);
-        } else {
-          showAlert('Failed to reset vault', 'error');
-        }
-      } catch (e) {
-        showAlert('Failed to reset vault', 'error');
+        btn.innerHTML = 'Unlock Vault';
       }
     }
     
     async function lockVault() {
-      const btn = event.target;
-      const originalText = btn.textContent;
-      btn.textContent = '🔒 Locking...';
-      btn.disabled = true;
-      
       try {
-        // Call server to clear encryption key from memory
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        
-        const response = await fetch('/api/logout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          // Close WebSocket
-          if (ws) {
-            ws.close();
-            ws = null;
-          }
-          
-          // Clear any sensitive data
-          keys = [];
-          
-          // Show unlock screen
-          showScreen('unlock');
-          
-          // Reset unlock button state (in case it was stuck)
-          const unlockBtn = document.getElementById('unlockBtn');
-          if (unlockBtn) {
-            unlockBtn.textContent = '🔓 Unlock Vault';
-            unlockBtn.disabled = false;
-          }
-          
-          // Clear password field
-          const passwordField = document.getElementById('unlockPassword');
-          if (passwordField) {
-            passwordField.value = '';
-            passwordField.focus();
-          }
-          
-          showAlert('🔒 Vault locked successfully', 'success');
-        } else {
-          showAlert('❌ Failed to lock vault', 'error');
-          btn.textContent = originalText;
-          btn.disabled = false;
-        }
-      } catch (e) {
-        console.error('Lock vault error:', e);
-        showAlert('❌ Failed to lock vault: ' + e.message, 'error');
-        btn.textContent = originalText;
-        btn.disabled = false;
+        await fetch('/api/logout', { method: 'POST' });
+        showToast('Vault locked', 'success');
+        await checkStatus();
+      } catch (err) {
+        showToast('Failed to lock', 'error');
       }
     }
     
-    async function loadKeys() {
+    async function loadCredentials() {
       try {
-        const response = await fetch('/api/keys');
-        keys = await response.json();
-        renderKeys();
-        updateKeyCount(keys.length, 20);
-      } catch (e) {
-        showAlert('Failed to load keys', 'error');
+        const res = await fetch('/api/credentials');
+        const data = await res.json();
+        credentials = data.credentials || [];
+        renderCredentials();
+      } catch (err) {
+        showToast('Failed to load credentials', 'error');
       }
     }
     
-    function renderKeys() {
-      const list = document.getElementById('keyList');
-      const shareAllBtn = document.getElementById('shareAllBtn');
+    function renderCredentials() {
+      const list = document.getElementById('credentialList');
+      const empty = document.getElementById('emptyState');
       
-      // Update share all button
-      const unsharedCount = keys.filter(k => !k.is_shared).length;
-      if (shareAllBtn) {
-        shareAllBtn.disabled = unsharedCount === 0 || !ws || ws.readyState !== WebSocket.OPEN;
-        shareAllBtn.textContent = unsharedCount === 0 ? '✅ All Keys Shared' : `📤 Share All Unshared Keys (${unsharedCount})`;
-      }
-      
-      if (keys.length === 0) {
-        list.innerHTML = `
-          <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-            </svg>
-            <p>No keys stored yet</p>
-            <p style="font-size: 12px; margin-top: 5px;">Add your first key to get started</p>
-          </div>
-        `;
+      if (credentials.length === 0) {
+        list.innerHTML = '';
+        empty.style.display = 'block';
         return;
       }
       
-      list.innerHTML = keys.map(key => {
-        const warningClass = key.needs_rotation ? (key.days_until_rotation < 0 ? 'danger' : 'warning') : '';
-        const sharedClass = key.is_shared ? 'shared' : 'unshared';
-        const warningBadge = key.needs_rotation ? `<span class="warning-badge">Rotate in ${key.days_until_rotation} days</span>` : '';
-        const shareStatus = key.is_shared 
-          ? `<span class="shared-indicator">✓ Shared${key.shared_with ? ` with ${key.shared_with}` : ''}</span>`
-          : `<span class="unshared-indicator">⚠ Not shared</span>`;
-        const shareBtnText = key.is_shared ? 'Share Again' : 'Share with OpenClaw Agent';
-        const shareBtnClass = key.is_shared ? 'btn-share shared' : 'btn-share';
-        
-        const serviceName = serviceDisplayNames[key.service] || key.service || 'Other';
-        
-        const unshareBtn = key.is_shared ? `<button class="btn-unshare" onclick="unshareKey('${key.id}')" id="unshare-btn-${key.id}">Revoke Share</button>` : '';
-        
+      empty.style.display = 'none';
+      list.innerHTML = credentials.map(cred => {
+        const config = serviceConfigs[cred.service] || serviceConfigs.custom;
         return `
-          <div class="key-item ${warningClass} ${sharedClass}" id="key-item-${key.id}">
-            <div class="key-header">
-              <div>
-                <span class="key-name">${key.name}</span>
-                ${shareStatus}
-                ${warningBadge}
-              </div>
-              <span class="key-service">${serviceName}</span>
+          <div class="credential-card">
+            <div class="credential-icon">${config.icon}</div>
+            <div class="credential-info">
+              <div class="credential-name">${cred.name || cred.service}</div>
+              <div class="credential-service">${cred.service}</div>
             </div>
-            <div class="key-meta">
-              ${key.url ? `🔗 ${key.url}<br>` : ''}
-              🕐 ${key.days_since_rotation} days old
-            </div>
-            <div class="key-actions">
-              <button class="${shareBtnClass}" onclick="shareKey('${key.id}')" id="share-btn-${key.id}">${shareBtnText}</button>
-              ${unshareBtn}
-              <button class="btn-edit" onclick="editKey('${key.id}')">Edit</button>
-              <button class="btn-delete" onclick="deleteKey('${key.id}')">Delete</button>
+            <div class="credential-actions">
+              <button class="icon-btn" onclick="copyCredential('${cred.id}')" title="Copy">📋</button>
+              <button class="icon-btn delete" onclick="deleteCredential('${cred.id}')" title="Delete">🗑️</button>
             </div>
           </div>
         `;
       }).join('');
     }
     
-    function toggleAddForm() {
-      document.getElementById('addKeyForm').classList.toggle('active');
-      document.getElementById('showAddBtn').style.display = 
-        document.getElementById('addKeyForm').classList.contains('active') ? 'none' : 'block';
+    function openAddModal() {
+      document.getElementById('addModal').classList.add('active');
+      document.getElementById('serviceSelect').value = '';
+      document.getElementById('credName').value = '';
+      document.getElementById('fieldsContainer').innerHTML = '';
+      document.getElementById('customServiceGroup').classList.add('hidden');
     }
     
-    async function addKey() {
-      const name = document.getElementById('keyName').value;
-      const service = document.getElementById('keyService').value;
-      const url = document.getElementById('keyUrl').value;
-      const autoShare = document.getElementById('autoShareKey').checked;
+    function closeAddModal() {
+      document.getElementById('addModal').classList.remove('active');
+    }
+    
+    function onServiceChange() {
+      const service = document.getElementById('serviceSelect').value;
+      const customGroup = document.getElementById('customServiceGroup');
+      const container = document.getElementById('fieldsContainer');
       
-      if (!name) {
-        showAlert('Name is required', 'error');
+      if (service === 'custom') {
+        customGroup.classList.remove('hidden');
+      } else {
+        customGroup.classList.add('hidden');
+      }
+      
+      if (!service) {
+        container.innerHTML = '';
         return;
       }
       
-      let value;
-      let credentials = {};
+      const config = serviceConfigs[service] || serviceConfigs.custom;
+      container.innerHTML = config.fields.map(field => `
+        <div class="input-group">
+          <label>${field.label}</label>
+          <div class="input-wrapper">
+            <input type="${field.type}" id="field_${field.name}" placeholder="${field.placeholder || ''}">
+            ${field.type === 'password' ? `<button class="password-toggle" onclick="togglePassword('field_${field.name}')">👁️</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    async function saveCredential() {
+      const service = document.getElementById('serviceSelect').value;
+      const name = document.getElementById('credName').value;
       
-      // Handle Twitter/X multi-field input
-      if (service === 'twitter') {
-        const apiKey = document.getElementById('twitterApiKey').value;
-        const apiSecret = document.getElementById('twitterApiSecret').value;
-        const accessToken = document.getElementById('twitterAccessToken').value;
-        const accessTokenSecret = document.getElementById('twitterAccessTokenSecret').value;
-        const bearerToken = document.getElementById('twitterBearerToken').value;
-        const clientId = document.getElementById('twitterClientId').value;
-        const clientSecret = document.getElementById('twitterClientSecret').value;
-        
-        // At least one credential required
-        if (!apiKey && !apiSecret && !accessToken && !accessTokenSecret && !bearerToken && !clientId && !clientSecret) {
-          showAlert('At least one Twitter credential is required', 'error');
-          return;
-        }
-        
-        // Store as JSON object with all credentials
-        credentials = {
-          apiKey,
-          apiSecret,
-          accessToken,
-          accessTokenSecret,
-          bearerToken,
-          clientId,
-          clientSecret
-        };
-        
-        // Create a summary for display
-        const filledFields = Object.entries(credentials).filter(([k, v]) => v).map(([k]) => k);
-        value = JSON.stringify({ ...credentials, _summary: `Twitter API (${filledFields.length} credentials)` });
-      } else {
-        // Standard single value
-        value = document.getElementById('keyValue').value;
-        
-        if (!value) {
-          showAlert('Secret value is required', 'error');
-          return;
-        }
-        
-        // Validate key pattern if service selected
-        if (service && !validateKeyPattern()) {
-          const validationDiv = document.getElementById('keyValidation');
-          validationDiv.className = 'key-validation invalid';
-          validationDiv.textContent = '⚠️ Key format doesn\'t match selected service. Please correct before saving.';
-          return;
-        }
+      if (!service) {
+        showToast('Please select a service', 'error');
+        return;
       }
       
+      const config = serviceConfigs[service] || serviceConfigs.custom;
+      const fields = {};
+      
+      for (const field of config.fields) {
+        const val = document.getElementById(`field_${field.name}`).value;
+        if (!val && !field.placeholder?.includes('optional')) {
+          showToast(`${field.label} is required`, 'error');
+          return;
+        }
+        fields[field.name] = val;
+      }
+      
+      const customService = service === 'custom' ? document.getElementById('customService').value : null;
+      
+      const btn = document.getElementById('saveCredBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div> Saving...';
+      
       try {
-        const response = await fetch('/api/keys', {
+        const res = await fetch('/api/credentials', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, service, url, value, autoShare })
+          body: JSON.stringify({ service, name, fields, customService })
         });
+        const data = await res.json();
         
-        if (response.ok) {
-          const result = await response.json();
-          let message = 'Key added successfully';
-          if (result.autoShared) {
-            message += ' and shared with OpenClaw Agent';
-          } else if (autoShare) {
-            message += ' (auto-share failed - OpenClaw Agent not connected)';
-          }
-          showAlert(message, result.autoShared ? 'success' : (autoShare ? 'warning' : 'success'));
-          
-          // Clear all fields
-          document.getElementById('keyName').value = '';
-          document.getElementById('keyService').value = '';
-          document.getElementById('keyUrl').value = '';
-          document.getElementById('keyValue').value = '';
-          document.getElementById('autoShareKey').checked = false;
-          document.getElementById('keyValidation').style.display = 'none';
-          
-          // Clear Twitter fields
-          document.getElementById('twitterApiKey').value = '';
-          document.getElementById('twitterApiSecret').value = '';
-          document.getElementById('twitterAccessToken').value = '';
-          document.getElementById('twitterAccessTokenSecret').value = '';
-          document.getElementById('twitterBearerToken').value = '';
-          document.getElementById('twitterClientId').value = '';
-          document.getElementById('twitterClientSecret').value = '';
-          
-          // Reset field visibility
-          onServiceChange();
-          
-          toggleAddForm();
-          loadKeys();
+        if (data.success) {
+          showToast('Credential saved', 'success');
+          closeAddModal();
+          await loadCredentials();
         } else {
-          const error = await response.json();
-          showAlert(error.error, 'error');
+          showToast(data.error || 'Failed to save', 'error');
         }
-      } catch (e) {
-        showAlert('Failed to add key', 'error');
-      }
-    }
-    
-    async function shareKey(id) {
-      const btn = document.getElementById(`share-btn-${id}`);
-      const originalText = btn ? btn.textContent : 'Share with OpenClaw Agent';
-
-      if (btn) {
-        btn.textContent = 'Sharing...';
-        btn.disabled = true;
-      }
-
-      try {
-        const response = await fetch(`/api/keys/${id}/share`, {
-          method: 'POST'
-        });
-
-        if (response.ok) {
-          showAlert('✅ Key shared with OpenClaw Agent successfully', 'success');
-          loadKeys(); // Refresh to show shared status
-        } else {
-          const error = await response.json();
-          showAlert(`❌ ${error.error}`, 'error');
-        }
-      } catch (e) {
-        showAlert('❌ Failed to share key. Is OpenClaw Agent connected?', 'error');
-      } finally {
-        if (btn) {
-          btn.textContent = originalText;
-          btn.disabled = false;
-        }
-      }
-    }
-
-    async function unshareKey(id) {
-      const btn = document.getElementById(`unshare-btn-${id}`);
-
-      if (btn) {
-        btn.textContent = 'Revoking...';
-        btn.disabled = true;
-      }
-
-      try {
-        const response = await fetch(`/api/keys/${id}/unshare`, {
-          method: 'POST'
-        });
-
-        if (response.ok) {
-          showAlert('✅ Key sharing revoked', 'success');
-          loadKeys(); // Refresh to show unshared status
-        } else {
-          const error = await response.json();
-          showAlert(`❌ ${error.error}`, 'error');
-        }
-      } catch (e) {
-        showAlert('❌ Failed to revoke sharing', 'error');
-      }
-    }
-
-    // Edit key modal/form
-    let editingKeyId = null;
-
-    async function editKey(id) {
-      const key = keys.find(k => k.id === id);
-      if (!key) {
-        showAlert('Key not found', 'error');
-        return;
-      }
-
-      editingKeyId = id;
-
-      // Get current value
-      try {
-        const response = await fetch(`/api/keys/${id}/value`);
-        if (!response.ok) {
-          showAlert('Failed to load key value', 'error');
-          return;
-        }
-        const keyData = await response.json();
-
-        // Populate edit form
-        document.getElementById('editKeyName').value = key.name;
-        document.getElementById('editKeyService').value = key.service || '';
-        document.getElementById('editKeyUrl').value = key.url || '';
-        document.getElementById('editKeyValue').value = keyData.value || '';
-        document.getElementById('editResetRotation').checked = false;
-
-        showEditForm();
-      } catch (e) {
-        showAlert('Failed to load key for editing', 'error');
-      }
-    }
-
-    function showEditForm() {
-      document.getElementById('editKeyForm').classList.add('active');
-      document.getElementById('addKeyForm').classList.remove('active');
-    }
-
-    function hideEditForm() {
-      document.getElementById('editKeyForm').classList.remove('active');
-      editingKeyId = null;
-    }
-
-    async function saveEditedKey() {
-      if (!editingKeyId) return;
-
-      const name = document.getElementById('editKeyName').value;
-      const service = document.getElementById('editKeyService').value;
-      const url = document.getElementById('editKeyUrl').value;
-      const value = document.getElementById('editKeyValue').value;
-      const resetRotation = document.getElementById('editResetRotation').checked;
-
-      if (!name || !value) {
-        showAlert('Name and value are required', 'error');
-        return;
-      }
-
-      const btn = document.getElementById('saveEditBtn');
-      const originalText = btn.textContent;
-      btn.textContent = 'Saving...';
-      btn.disabled = true;
-
-      try {
-        const response = await fetch(`/api/keys/${editingKeyId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, service, url, value, resetRotation })
-        });
-
-        if (response.ok) {
-          showAlert(resetRotation ? '✅ Key updated and rotation timer reset' : '✅ Key updated successfully', 'success');
-          hideEditForm();
-          loadKeys();
-        } else {
-          const error = await response.json();
-          showAlert(`❌ ${error.error}`, 'error');
-        }
-      } catch (e) {
-        showAlert('❌ Failed to update key', 'error');
-      } finally {
-        btn.textContent = originalText;
-        btn.disabled = false;
-      }
-    }
-
-    async function shareAllKeys() {
-      const btn = document.getElementById('shareAllBtn');
-      const status = document.getElementById('shareAllStatus');
-      
-      btn.disabled = true;
-      btn.textContent = '📤 Sharing...';
-      status.style.display = 'block';
-      status.textContent = 'Sharing keys with OpenClaw Agent...';
-      
-      try {
-        const response = await fetch('/api/keys/share-all', {
-          method: 'POST'
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          const message = `✅ Shared ${result.success} keys. ${result.failed > 0 ? `${result.failed} failed.` : ''}`;
-          showAlert(message, result.failed > 0 ? 'warning' : 'success');
-          status.textContent = result.failed > 0 
-            ? `Shared ${result.success}, failed ${result.failed}. Errors: ${result.errors.join(', ')}`
-            : `Successfully shared all ${result.success} keys!`;
-          loadKeys();
-        } else {
-          const error = await response.json();
-          showAlert(`❌ ${error.error}`, 'error');
-          status.textContent = `Failed: ${error.error}`;
-        }
-      } catch (e) {
-        showAlert('❌ Failed to share keys. Is OpenClaw Agent connected?', 'error');
-        status.textContent = 'Failed: OpenClaw Agent not connected';
+      } catch (err) {
+        showToast('Failed to save credential', 'error');
       } finally {
         btn.disabled = false;
-        renderKeys(); // Update button text
+        btn.innerHTML = 'Save Credential';
       }
     }
     
-    async function deleteKey(id) {
-      if (!confirm('Are you sure you want to delete this key?')) return;
-      
+    async function copyCredential(id) {
       try {
-        const response = await fetch(`/api/keys/${id}`, {
-          method: 'DELETE'
-        });
+        const res = await fetch(`/api/credentials/${id}/decrypt`, { method: 'POST' });
+        const data = await res.json();
         
-        if (response.ok) {
-          showAlert('Key deleted', 'success');
-          loadKeys();
-        }
-      } catch (e) {
-        showAlert('Failed to delete key', 'error');
-      }
-    }
-    
-    // Fetch WebSocket token from server
-    async function getWsToken() {
-      try {
-        const response = await fetch('/api/ws-token');
-        const data = await response.json();
-        return data.token;
-      } catch (e) {
-        console.error('Failed to get WebSocket token:', e);
-        return null;
-      }
-    }
-    
-    function connectWebSocket() {
-      // Don't connect if on unlock/setup screen
-      const unlockScreen = document.getElementById('unlockScreen');
-      const setupScreen = document.getElementById('setupScreen');
-      if ((unlockScreen && unlockScreen.classList.contains('active')) || 
-          (setupScreen && setupScreen.classList.contains('active'))) {
-        console.log('Not connecting WebSocket - on auth screen');
-        return;
-      }
-      
-      if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
-        console.log('WebSocket already connected or connecting');
-        return;
-      }
-      
-      console.log('Connecting WebSocket...');
-      ws = new WebSocket('ws://localhost:8766');
-      
-      ws.onopen = async () => {
-        console.log('WebSocket connected, authenticating...');
-        // Get token and authenticate
-        const token = await getWsToken();
-        if (token) {
-          ws.send(JSON.stringify({ type: 'auth', token: token }));
+        if (data.success && data.decrypted) {
+          const text = Object.values(data.decrypted.fields).join('\n');
+          await navigator.clipboard.writeText(text);
+          showToast('Copied to clipboard', 'success');
         } else {
-          console.error('No token available for authentication');
+          showToast('Failed to decrypt', 'error');
         }
-      };
-      
-      ws.onclose = () => {
-        console.log('WebSocket closed');
-        document.getElementById('connectionDot').classList.remove('connected');
-        document.getElementById('connectionText').textContent = '❌ OpenClaw Agent disconnected';
-        const connectDot = document.getElementById('connectStatusDot');
-        if (connectDot) {
-          connectDot.classList.remove('connected');
-          document.getElementById('connectStatusText').textContent = 'Disconnected. Retrying...';
-        }
-        // Disable share all button
-        const shareAllBtn = document.getElementById('shareAllBtn');
-        if (shareAllBtn) {
-          shareAllBtn.disabled = true;
-        }
-        // Only retry if on vault screen
-        const vaultScreen = document.getElementById('vaultScreen');
-        if (vaultScreen && vaultScreen.classList.contains('active')) {
-          setTimeout(connectWebSocket, 5000);
-        }
-      };
-      
-      ws.onerror = (error) => {
-        console.log('WebSocket error:', error);
-        document.getElementById('connectionText').textContent = '⚠️ Connection error';
-      };
-      
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        console.log('WebSocket message:', data.type);
-        
-        if (data.type === 'auth_success') {
-          console.log('WebSocket authenticated');
-          document.getElementById('connectionDot').classList.add('connected');
-          document.getElementById('connectionText').textContent = '✅ OpenClaw Agent connected';
-          const connectDot = document.getElementById('connectStatusDot');
-          if (connectDot) {
-            connectDot.classList.add('connected');
-            document.getElementById('connectStatusText').textContent = 'Connected! Ready to share keys.';
-          }
-          // Enable share all button if there are unshared keys
-          renderKeys();
-        } else if (data.type === 'key_received') {
-          showAlert(`✅ OpenClaw Agent received: ${data.keyName}`, 'success');
-          loadKeys(); // Refresh to show updated shared status
-        }
-      };
+      } catch (err) {
+        showToast('Failed to copy', 'error');
+      }
     }
     
-    function showAlert(message, type) {
-      const alerts = document.getElementById('alerts');
-      const alert = document.createElement('div');
-      alert.className = `alert alert-${type}`;
-      alert.textContent = message;
-      alerts.appendChild(alert);
+    async function deleteCredential(id) {
+      if (!confirm('Delete this credential?')) return;
       
-      setTimeout(() => {
-        alert.remove();
-      }, 5000);
+      try {
+        const res = await fetch(`/api/credentials/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('Credential deleted', 'success');
+          await loadCredentials();
+        } else {
+          showToast('Failed to delete', 'error');
+        }
+      } catch (err) {
+        showToast('Failed to delete', 'error');
+      }
     }
+    
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <span>${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+    
+    // Close modal on overlay click
+    document.getElementById('addModal').addEventListener('click', (e) => {
+      if (e.target.id === 'addModal') closeAddModal();
+    });
     
     // Initialize
-    checkStatus();
-    
-    // Fallback button handler for create vault
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('DOM loaded, attaching fallback handlers');
-      const createBtn = document.getElementById('createVaultBtn');
-      if (createBtn) {
-        console.log('Create vault button found');
-        createBtn.addEventListener('click', function(e) {
-          console.log('Create vault button clicked (fallback)');
-          e.preventDefault();
-          e.stopPropagation();
-          initializeVault();
-          return false;
-        });
-      } else {
-        console.log('Create vault button NOT found');
-      }
-    });
+    init();
   </script>
 </body>
 </html>
