@@ -467,6 +467,7 @@
             </div>
             <div class="credential-actions">
               <button class="icon-btn" onclick="copyCredential('${cred.id}')" title="Copy">📋</button>
+              <button class="icon-btn" onclick="shareCredential('${cred.id}')" title="Share to Agent">📤</button>
               <button class="icon-btn delete" onclick="deleteCredential('${cred.id}')" title="Delete">🗑️</button>
             </div>
           </div>
@@ -591,6 +592,28 @@
         }
       } catch (err) {
         showToast('Failed to copy', 'error');
+      }
+    }
+    
+    async function shareCredential(id) {
+      const btn = event.target.closest('.icon-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;"></div>';
+      
+      try {
+        const res = await fetch(`/api/keys/${id}/share`, { method: 'POST' });
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('Shared to OpenClaw agent', 'success');
+        } else {
+          showToast(data.error || 'Failed to share', 'error');
+        }
+      } catch (err) {
+        showToast('Failed to share - agent not connected', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '📤';
       }
     }
     
