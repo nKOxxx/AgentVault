@@ -434,9 +434,9 @@
     
     async function loadCredentials() {
       try {
-        const res = await fetch('/api/credentials');
+        const res = await fetch('/api/keys');
         const data = await res.json();
-        credentials = data.credentials || [];
+        credentials = data.keys || [];
         renderCredentials();
       } catch (err) {
         showToast('Failed to load credentials', 'error');
@@ -447,7 +447,7 @@
       const list = document.getElementById('credentialList');
       const empty = document.getElementById('emptyState');
       
-      if (credentials.length === 0) {
+      if (!credentials || credentials.length === 0) {
         list.innerHTML = '';
         empty.style.display = 'block';
         return;
@@ -455,13 +455,14 @@
       
       empty.style.display = 'none';
       list.innerHTML = credentials.map(cred => {
-        const config = serviceConfigs[cred.service] || serviceConfigs.custom;
+        const service = cred.service || 'custom';
+        const config = serviceConfigs[service] || serviceConfigs.custom;
         return `
           <div class="credential-card">
             <div class="credential-icon">${config.icon}</div>
             <div class="credential-info">
-              <div class="credential-name">${cred.name || cred.service}</div>
-              <div class="credential-service">${cred.service}</div>
+              <div class="credential-name">${cred.name || service}</div>
+              <div class="credential-service">${service}</div>
             </div>
             <div class="credential-actions">
               <button class="icon-btn" onclick="copyCredential('${cred.id}')" title="Copy">📋</button>
@@ -525,25 +526,36 @@
       const fields = {};
       
       for (const field of config.fields) {
-        const val = document.getElementById(`field_${field.name}`).value;
-        if (!val && !field.placeholder?.includes('optional')) {
-          showToast(`${field.label} is required`, 'error');
-          return;
-        }
-        fields[field.name] = val;
+        const val = document.getElementById(`field_${field.name}`)?.value;
+        if (val) fields[field.name] = val;
       }
       
-      const customService = service === 'custom' ? document.getElementById('customService').value : null;
+      // Build value from fields
+      let value = '';
+      if (service === 'twitter') {
+        // X/Twitter needs special format
+        value = JSON.stringify(fields);
+      } else if (service === 'render') {
+        value = fields.apiKey || '';
+      } else {
+        value = Object.values(fields).join('\n');
+      }
+      
+      const displayName = name || `${service} ${new Date().toLocaleDateString()}`;
       
       const btn = document.getElementById('saveCredBtn');
       btn.disabled = true;
       btn.innerHTML = '<div class="spinner"></div> Saving...';
       
       try {
-        const res = await fetch('/api/credentials', {
+        const res = await fetch('/api/keys', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ service, name, fields, customService })
+          body: JSON.stringify({ 
+            name: displayName, 
+            service: service === 'custom' ? document.getElementById('customService')?.value || 'custom' : service, 
+            value: value 
+          })
         });
         const data = await res.json();
         
@@ -564,15 +576,14 @@
     
     async function copyCredential(id) {
       try {
-        const res = await fetch(`/api/credentials/${id}/decrypt`, { method: 'POST' });
+        const res = await fetch(`/api/keys/${id}/value`);
         const data = await res.json();
         
-        if (data.success && data.decrypted) {
-          const text = Object.values(data.decrypted.fields).join('\n');
-          await navigator.clipboard.writeText(text);
+        if (data.success && data.value) {
+          await navigator.clipboard.writeText(data.value);
           showToast('Copied to clipboard', 'success');
         } else {
-          showToast('Failed to decrypt', 'error');
+          showToast('Failed to get value', 'error');
         }
       } catch (err) {
         showToast('Failed to copy', 'error');
@@ -583,7 +594,7 @@
       if (!confirm('Delete this credential?')) return;
       
       try {
-        const res = await fetch(`/api/credentials/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/keys/${id}`, { method: 'DELETE' });
         const data = await res.json();
         
         if (data.success) {
