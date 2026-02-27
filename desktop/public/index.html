@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgentVault</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/theme.css">
+  <style>
+    /* Additional component styles */
+    .lock-animation {
+      font-size: 64px;
+      margin-bottom: 24px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+    }
+    
+    .vault-actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    
+    .vault-actions .btn {
+      flex: 1;
+    }
+    
+    .security-tips {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-top: 24px;
+    }
+    
+    .security-tips h4 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .security-tips ul {
+      list-style: none;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    
+    .security-tips li {
+      padding: 4px 0;
+      padding-left: 20px;
+      position: relative;
+    }
+    
+    .security-tips li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--success);
+    }
+    
+    .reveal-code {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 12px;
+      background: var(--bg-primary);
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      word-break: break-all;
+      color: var(--accent-primary);
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      background: var(--bg-secondary);
+      padding: 4px;
+      border-radius: var(--radius-md);
+    }
+    
+    .tab {
+      flex: 1;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+    }
+    
+    .tab.active {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">
+        <div class="logo-icon">🔐</div>
+        <h1>AgentVault</h1>
+      </div>
+      <p>Secure credential management for AI agents</p>
+    </div>
+    
+    <div class="content">
+      <!-- Setup Screen -->
+      <div class="setup-screen active" id="setupScreen">
+        <div style="text-align: center; margin-bottom: 32px;">
+          <div class="lock-animation">🔐</div>
+          <h2 style="font-size: 20px; margin-bottom: 8px;">Create Your Vault</h2>
+          <p style="color: var(--text-muted);">Set a master password to secure your credentials</p>
+        </div>
+        
+        <div class="input-group">
+          <label>Master Password</label>
+          <div class="input-wrapper">
+            <input type="password" id="setupPassword" placeholder="Create a strong password">
+            <button class="password-toggle" onclick="togglePassword('setupPassword')">👁️</button>
+          </div>
+          <div class="password-strength" id="passwordStrength">
+            <div class="password-strength-bar"></div>
+          </div>
+        </div>
+        
+        <div class="input-group">
+          <label>Confirm Password</label>
+          <div class="input-wrapper">
+            <input type="password" id="confirmPassword" placeholder="Confirm your password">
+            <button class="password-toggle" onclick="togglePassword('confirmPassword')">👁️</button>
+          </div>
+        </div>
+        
+        <button class="btn btn-primary" id="createVaultBtn" onclick="createVault()">
+          Create Vault
+        </button>
+        
+        <div class="security-tips">
+          <h4>🔒 Security Tips</h4>
+          <ul>
+            <li>Use at least 12 characters</li>
+            <li>Include numbers and symbols</li>
+            <li>Store your password in a safe place</li>
+            <li>We cannot recover lost passwords</li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- Unlock Screen -->
+      <div class="unlock-screen" id="unlockScreen">
+        <div style="text-align: center; margin-bottom: 32px;">
+          <div class="lock-animation">🔒</div>
+          <h2 style="font-size: 20px; margin-bottom: 8px;">Vault Locked</h2>
+          <p style="color: var(--text-muted);">Enter your master password to unlock</p>
+        </div>
+        
+        <div class="input-group">
+          <label>Master Password</label>
+          <div class="input-wrapper">
+            <input type="password" id="unlockPassword" placeholder="Enter your password" onkeypress="if(event.key==='Enter')unlockVault()">
+            <button class="password-toggle" onclick="togglePassword('unlockPassword')">👁️</button>
+          </div>
+        </div>
+        
+        <button class="btn btn-primary" id="unlockBtn" onclick="unlockVault()">
+          Unlock Vault
+        </button>
+      </div>
+      
+      <!-- Vault Screen -->
+      <div class="vault-screen" id="vaultScreen">
+        <div class="vault-actions">
+          <button class="btn btn-primary" onclick="openAddModal()">
+            <span>+</span> Add Credential
+          </button>
+          <button class="btn btn-secondary" onclick="lockVault()">
+            <span>🔒</span> Lock
+          </button>
+        </div>
+        
+        <div id="credentialList" class="credential-list">
+          <!-- Credentials loaded here -->
+        </div>
+        
+        <div class="empty-state" id="emptyState" style="display: none;">
+          <div class="empty-state-icon">🔑</div>
+          <h3>No credentials yet</h3>
+          <p>Add your first API key or password</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Add Credential Modal -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Add Credential</h2>
+        <p>Store a new API key or password securely</p>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label>Service</label>
+          <select id="serviceSelect" onchange="onServiceChange()">
+            <option value="">Select a service...</option>
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic</option>
+            <option value="github">GitHub</option>
+            <option value="render">Render</option>
+            <option value="twitter">X/Twitter</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        
+        <div class="input-group">
+          <label>Name (optional)</label>
+          <input type="text" id="credName" placeholder="e.g., Production API Key">
+        </div>
+        
+        <div id="customServiceGroup" class="input-group hidden">
+          <label>Custom Service Name</label>
+          <input type="text" id="customService" placeholder="Service name">
+        </div>
+        
+        <div id="fieldsContainer">
+          <!-- Dynamic fields based on service -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
+        <button class="btn btn-primary" id="saveCredBtn" onclick="saveCredential()">Save Credential</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // Service configurations
+    const serviceConfigs = {
+      openai: {
+        icon: '🤖',
+        fields: [{ name: 'apiKey', label: 'API Key', type: 'password', placeholder: 'sk-...' }]
+      },
+      anthropic: {
+        icon: '🧠',
+        fields: [{ name: 'apiKey', label: 'API Key', type: 'password', placeholder: 'sk-ant-...' }]
+      },
+      github: {
+        icon: '🐙',
+        fields: [{ name: 'token', label: 'Personal Access Token', type: 'password', placeholder: 'ghp_...' }]
+      },
+      render: {
+        icon: '⚡',
+        fields: [
+          { name: 'apiKey', label: 'API Key', type: 'password', placeholder: 'rnd_...' },
+          { name: 'serviceId', label: 'Service ID (optional)', type: 'text', placeholder: 'srv-...' }
+        ]
+      },
+      twitter: {
+        icon: '🐦',
+        fields: [
+          { name: 'apiKey', label: 'API Key', type: 'password' },
+          { name: 'apiSecret', label: 'API Secret', type: 'password' },
+          { name: 'accessToken', label: 'Access Token', type: 'password' },
+          { name: 'accessSecret', label: 'Access Token Secret', type: 'password' },
+          { name: 'bearerToken', label: 'Bearer Token (optional)', type: 'password' }
+        ]
+      },
+      custom: {
+        icon: '🔑',
+        fields: [
+          { name: 'key', label: 'Key / Value', type: 'password', placeholder: 'Enter value' }
+        ]
+      }
+    };
+    
+    let vaultState = { initialized: false, unlocked: false };
+    let credentials = [];
+    
+    // Initialize
+    async function init() {
+      await checkStatus();
+      setupPasswordStrength();
+    }
+    
+    async function checkStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        vaultState = data;
+        
+        if (!data.initialized) {
+          showScreen('setup');
+        } else if (!data.unlocked) {
+          showScreen('unlock');
+        } else {
+          showScreen('vault');
+          await loadCredentials();
+        }
+      } catch (err) {
+        showToast('Failed to connect to server', 'error');
+      }
+    }
+    
+    function showScreen(screen) {
+      document.querySelectorAll('.setup-screen, .unlock-screen, .vault-screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screen + 'Screen').classList.add('active');
+    }
+    
+    function togglePassword(id) {
+      const input = document.getElementById(id);
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+    
+    function setupPasswordStrength() {
+      const input = document.getElementById('setupPassword');
+      const bar = document.querySelector('#passwordStrength .password-strength-bar');
+      
+      input.addEventListener('input', () => {
+        const val = input.value;
+        let strength = 0;
+        if (val.length >= 8) strength++;
+        if (val.length >= 12) strength++;
+        if (/[A-Z]/.test(val)) strength++;
+        if (/[0-9]/.test(val)) strength++;
+        if (/[^A-Za-z0-9]/.test(val)) strength++;
+        
+        bar.className = 'password-strength-bar';
+        if (strength <= 2) bar.classList.add('strength-weak');
+        else if (strength <= 4) bar.classList.add('strength-medium');
+        else bar.classList.add('strength-strong');
+      });
+    }
+    
+    async function createVault() {
+      const password = document.getElementById('setupPassword').value;
+      const confirm = document.getElementById('confirmPassword').value;
+      
+      if (!password || password.length < 8) {
+        showToast('Password must be at least 8 characters', 'error');
+        return;
+      }
+      if (password !== confirm) {
+        showToast('Passwords do not match', 'error');
+        return;
+      }
+      
+      const btn = document.getElementById('createVaultBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div> Creating...';
+      
+      try {
+        const res = await fetch('/api/init', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('Vault created successfully!', 'success');
+          await checkStatus();
+        } else {
+          showToast(data.error || 'Failed to create vault', 'error');
+        }
+      } catch (err) {
+        showToast('Failed to create vault', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Create Vault';
+      }
+    }
+    
+    async function unlockVault() {
+      const password = document.getElementById('unlockPassword').value;
+      if (!password) {
+        showToast('Please enter your password', 'error');
+        return;
+      }
+      
+      const btn = document.getElementById('unlockBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div> Unlocking...';
+      
+      try {
+        const res = await fetch('/api/unlock', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('Vault unlocked', 'success');
+          await checkStatus();
+        } else {
+          showToast('Invalid password', 'error');
+        }
+      } catch (err) {
+        showToast('Failed to unlock', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Unlock Vault';
+      }
+    }
+    
+    async function lockVault() {
+      try {
+        await fetch('/api/logout', { method: 'POST' });
+        showToast('Vault locked', 'success');
+        await checkStatus();
+      } catch (err) {
+        showToast('Failed to lock', 'error');
+      }
+    }
+    
+    async function loadCredentials() {
+      try {
+        const res = await fetch('/api/keys');
+        const data = await res.json();
+        // API returns array directly, not {keys: [...]}
+        credentials = Array.isArray(data) ? data : (data.keys || []);
+        renderCredentials();
+      } catch (err) {
+        showToast('Failed to load credentials', 'error');
+      }
+    }
+    
+    function renderCredentials() {
+      const list = document.getElementById('credentialList');
+      const empty = document.getElementById('emptyState');
+      
+      if (!credentials || credentials.length === 0) {
+        list.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      
+      empty.style.display = 'none';
+      list.innerHTML = credentials.map(cred => {
+        const service = cred.service || 'custom';
+        const config = serviceConfigs[service] || serviceConfigs.custom;
+        
+        // Share status badge
+        let statusBadge = '';
+        const status = cred.share_status || 'none';
+        if (status === 'shared') {
+          statusBadge = '<span class="share-badge shared" title="Shared with agent">✓</span>';
+        } else if (status === 'pending') {
+          statusBadge = '<span class="share-badge pending" title="Sharing...">⏳</span>';
+        } else if (status === 'error') {
+          statusBadge = '<span class="share-badge error" title="Share failed">✕</span>';
+        }
+        
+        return `
+          <div class="credential-card">
+            <div class="credential-icon">${config.icon}</div>
+            <div class="credential-info">
+              <div class="credential-name">${cred.name || service} ${statusBadge}</div>
+              <div class="credential-service">${service}</div>
+            </div>
+            <div class="credential-actions">
+              <button class="icon-btn" onclick="copyCredential('${cred.id}')" title="Copy">📋</button>
+              <button class="icon-btn" onclick="shareCredential('${cred.id}')" title="Share to Agent">📤</button>
+              <button class="icon-btn delete" onclick="deleteCredential('${cred.id}')" title="Delete">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    function openAddModal() {
+      document.getElementById('addModal').classList.add('active');
+      document.getElementById('serviceSelect').value = '';
+      document.getElementById('credName').value = '';
+      document.getElementById('fieldsContainer').innerHTML = '';
+      document.getElementById('customServiceGroup').classList.add('hidden');
+    }
+    
+    function closeAddModal() {
+      document.getElementById('addModal').classList.remove('active');
+    }
+    
+    function onServiceChange() {
+      const service = document.getElementById('serviceSelect').value;
+      const customGroup = document.getElementById('customServiceGroup');
+      const container = document.getElementById('fieldsContainer');
+      
+      if (service === 'custom') {
+        customGroup.classList.remove('hidden');
+      } else {
+        customGroup.classList.add('hidden');
+      }
+      
+      if (!service) {
+        container.innerHTML = '';
+        return;
+      }
+      
+      const config = serviceConfigs[service] || serviceConfigs.custom;
+      container.innerHTML = config.fields.map(field => `
+        <div class="input-group">
+          <label>${field.label}</label>
+          <div class="input-wrapper">
+            <input type="${field.type}" id="field_${field.name}" placeholder="${field.placeholder || ''}">
+            ${field.type === 'password' ? `<button class="password-toggle" onclick="togglePassword('field_${field.name}')">👁️</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    async function saveCredential() {
+      const service = document.getElementById('serviceSelect').value;
+      const name = document.getElementById('credName').value;
+      
+      if (!service) {
+        showToast('Please select a service', 'error');
+        return;
+      }
+      
+      const config = serviceConfigs[service] || serviceConfigs.custom;
+      const fields = {};
+      
+      for (const field of config.fields) {
+        const val = document.getElementById(`field_${field.name}`)?.value;
+        if (val) fields[field.name] = val;
+      }
+      
+      // Build value from fields
+      let value = '';
+      if (service === 'twitter') {
+        // X/Twitter needs special format
+        value = JSON.stringify(fields);
+      } else if (service === 'render') {
+        value = fields.apiKey || '';
+      } else {
+        value = Object.values(fields).join('\n');
+      }
+      
+      const displayName = name || `${service} ${new Date().toLocaleDateString()}`;
+      
+      const btn = document.getElementById('saveCredBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div> Saving...';
+      
+      try {
+        const res = await fetch('/api/keys', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            name: displayName, 
+            service: service === 'custom' ? document.getElementById('customService')?.value || 'custom' : service, 
+            value: value 
+          })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('Credential saved', 'success');
+          closeAddModal();
+          await loadCredentials();
+        } else {
+          showToast(data.error || 'Failed to save', 'error');
+        }
+      } catch (err) {
+        showToast('Failed to save credential', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Save Credential';
+      }
+    }
+    
+    async function copyCredential(id) {
+      try {
+        const res = await fetch(`/api/keys/${id}/value`);
+        const data = await res.json();
+        
+        // API returns {name, service, url, value} directly, no success field
+        if (data.value) {
+          await navigator.clipboard.writeText(data.value);
+          showToast('Copied to clipboard', 'success');
+        } else if (data.error) {
+          showToast(data.error, 'error');
+        } else {
+          showToast('Failed to get value', 'error');
+        }
+      } catch (err) {
+        showToast('Failed to copy', 'error');
+      }
+    }
+    
+    async function shareCredential(id) {
+      const btn = event.target.closest('.icon-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;"></div>';
+      
+      // Optimistically set to pending
+      const cred = credentials.find(c => c.id === id);
+      if (cred) {
+        cred.share_status = 'pending';
+        renderCredentials();
+      }
+      
+      try {
+        const res = await fetch(`/api/keys/${id}/share`, { method: 'POST' });
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('Shared to OpenClaw agent', 'success');
+          // Refresh to get updated status
+          await loadCredentials();
+        } else {
+          showToast(data.error || 'Failed to share', 'error');
+          await loadCredentials();
+        }
+      } catch (err) {
+        showToast('Failed to share - agent not connected', 'error');
+        await loadCredentials();
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '📤';
+      }
+    }
+    
+    async function deleteCredential(id) {
+      if (!confirm('Delete this credential?')) return;
+      
+      try {
+        const res = await fetch(`/api/keys/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('Credential deleted', 'success');
+          await loadCredentials();
+        } else {
+          showToast('Failed to delete', 'error');
+        }
+      } catch (err) {
+        showToast('Failed to delete', 'error');
+      }
+    }
+    
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <span>${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+    
+    // Close modal on overlay click
+    document.getElementById('addModal').addEventListener('click', (e) => {
+      if (e.target.id === 'addModal') closeAddModal();
+    });
+    
+    // Initialize
+    init();
+  </script>
+</body>
+</html>
