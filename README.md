@@ -252,6 +252,27 @@ curl -X POST http://localhost:8765/api/reset
 
 ---
 
+## Share Status Badges
+
+Each credential shows a visual indicator of its sharing status with your OpenClaw agent:
+
+| Badge | Status | Meaning |
+|-------|--------|---------|
+| ✓ | **Green** | Successfully shared with agent |
+| ⏳ | **Orange** | Sharing in progress (pending confirmation) |
+| ✕ | **Red** | Share failed (agent not connected or error) |
+| (none) | **None** | Not shared yet |
+
+### How it works:
+
+1. **Click 📤 Share** — Badge turns orange (⏳ pending)
+2. **Agent receives** — Badge turns green (✓ shared)
+3. **If failed** — Badge turns red (✕ error)
+
+The status is persistent across vault locks/unlocks.
+
+---
+
 ## Security
 
 ### Encryption

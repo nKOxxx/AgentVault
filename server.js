@@ -233,13 +233,21 @@ function initDB() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       last_rotated DATETIME DEFAULT CURRENT_TIMESTAMP,
       rotation_interval INTEGER DEFAULT 90,
-      shared_with TEXT DEFAULT NULL
+      shared_with TEXT DEFAULT NULL,
+      share_status TEXT DEFAULT 'none'
     )`);
     
     // Migration: Add shared_with column if it doesn't exist
     db.run(`ALTER TABLE keys ADD COLUMN shared_with TEXT DEFAULT NULL`, (err) => {
       if (err && !err.message.includes('duplicate column')) {
         console.log('Note: shared_with column may already exist');
+      }
+    });
+    
+    // Migration: Add share_status column if it doesn't exist
+    db.run(`ALTER TABLE keys ADD COLUMN share_status TEXT DEFAULT 'none'`, (err) => {
+      if (err && !err.message.includes('duplicate column')) {
+        console.log('Note: share_status column may already exist');
       }
     });
   });
@@ -368,7 +376,7 @@ function unlockVault(password) {
 // Get all keys
 function getKeys() {
   return new Promise((resolve, reject) => {
-    db.all("SELECT id, name, service, url, created_at, last_rotated, rotation_interval, shared_with FROM keys ORDER BY created_at DESC", (err, rows) => {
+    db.all("SELECT id, name, service, url, created_at, last_rotated, rotation_interval, shared_with, share_status FROM keys ORDER BY created_at DESC", (err, rows) => {
       if (err) reject(err);
       resolve(rows);
     });
@@ -432,8 +440,22 @@ function getKeyValue(id) {
 function markKeyShared(id, agentName = 'Agent') {
   return new Promise((resolve, reject) => {
     db.run(
-      "UPDATE keys SET shared_with = ? WHERE id = ?",
+      "UPDATE keys SET shared_with = ?, share_status = 'shared' WHERE id = ?",
       [agentName, id],
+      function(err) {
+        if (err) reject(err);
+        resolve();
+      }
+    );
+  });
+}
+
+// Update share status (pending, shared, error)
+function updateShareStatus(id, status) {
+  return new Promise((resolve, reject) => {
+    db.run(
+      "UPDATE keys SET share_status = ? WHERE id = ?",
+      [status, id],
       function(err) {
         if (err) reject(err);
         resolve();
@@ -446,7 +468,7 @@ function markKeyShared(id, agentName = 'Agent') {
 function unshareKey(id) {
   return new Promise((resolve, reject) => {
     db.run(
-      "UPDATE keys SET shared_with = NULL WHERE id = ?",
+      "UPDATE keys SET shared_with = NULL, share_status = 'none' WHERE id = ?",
       [id],
       function(err) {
         if (err) reject(err);
@@ -841,17 +863,27 @@ app.post('/api/keys/:id/share', async (req, res) => {
     }
     
     const keyData = await getKeyValue(req.params.id);
-    await shareToOpenClaw(keyData, req.params.id);
     
-    // Log key sharing
-    logAudit('key_shared', {
-      keyId: req.params.id,
-      keyName: keyData.name,
-      sharedWith: 'OpenClaw Agent',
-      timestamp: new Date().toISOString()
-    });
+    // Set status to pending
+    await updateShareStatus(req.params.id, 'pending');
     
-    res.json({ success: true, message: 'Shared with OpenClaw Agent' });
+    try {
+      await shareToOpenClaw(keyData, req.params.id);
+      
+      // Log key sharing
+      logAudit('key_shared', {
+        keyId: req.params.id,
+        keyName: keyData.name,
+        sharedWith: 'OpenClaw Agent',
+        timestamp: new Date().toISOString()
+      });
+      
+      res.json({ success: true, message: 'Shared with OpenClaw Agent' });
+    } catch (shareErr) {
+      // Set status to error on failure
+      await updateShareStatus(req.params.id, 'error');
+      throw shareErr;
+    }
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

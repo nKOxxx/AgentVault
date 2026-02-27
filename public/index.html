@@ -458,11 +458,23 @@
       list.innerHTML = credentials.map(cred => {
         const service = cred.service || 'custom';
         const config = serviceConfigs[service] || serviceConfigs.custom;
+        
+        // Share status badge
+        let statusBadge = '';
+        const status = cred.share_status || 'none';
+        if (status === 'shared') {
+          statusBadge = '<span class="share-badge shared" title="Shared with agent">✓</span>';
+        } else if (status === 'pending') {
+          statusBadge = '<span class="share-badge pending" title="Sharing...">⏳</span>';
+        } else if (status === 'error') {
+          statusBadge = '<span class="share-badge error" title="Share failed">✕</span>';
+        }
+        
         return `
           <div class="credential-card">
             <div class="credential-icon">${config.icon}</div>
             <div class="credential-info">
-              <div class="credential-name">${cred.name || service}</div>
+              <div class="credential-name">${cred.name || service} ${statusBadge}</div>
               <div class="credential-service">${service}</div>
             </div>
             <div class="credential-actions">
@@ -600,17 +612,28 @@
       btn.disabled = true;
       btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;"></div>';
       
+      // Optimistically set to pending
+      const cred = credentials.find(c => c.id === id);
+      if (cred) {
+        cred.share_status = 'pending';
+        renderCredentials();
+      }
+      
       try {
         const res = await fetch(`/api/keys/${id}/share`, { method: 'POST' });
         const data = await res.json();
         
         if (data.success) {
           showToast('Shared to OpenClaw agent', 'success');
+          // Refresh to get updated status
+          await loadCredentials();
         } else {
           showToast(data.error || 'Failed to share', 'error');
+          await loadCredentials();
         }
       } catch (err) {
         showToast('Failed to share - agent not connected', 'error');
+        await loadCredentials();
       } finally {
         btn.disabled = false;
         btn.innerHTML = '📤';
