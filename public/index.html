@@ -580,9 +580,12 @@
         const res = await fetch(`/api/keys/${id}/value`);
         const data = await res.json();
         
-        if (data.success && data.value) {
+        // API returns {name, service, url, value} directly, no success field
+        if (data.value) {
           await navigator.clipboard.writeText(data.value);
           showToast('Copied to clipboard', 'success');
+        } else if (data.error) {
+          showToast(data.error, 'error');
         } else {
           showToast('Failed to get value', 'error');
         }
