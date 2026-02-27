@@ -22,3 +22,8 @@ Thumbs.db
 
 # Tokens
 .ws-token
+*.dmg
+*.zip
+desktop/dist/
+*.dmg
+*.zip

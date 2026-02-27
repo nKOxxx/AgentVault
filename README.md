@@ -8,6 +8,30 @@
 
 ---
 
+## 🚀 Download Desktop App (macOS)
+
+**Native desktop app — No terminal, no setup, just works.**
+
+| Intel Macs | Apple Silicon (M1/M2/M3) |
+|------------|-------------------------|
+| [AgentVault-1.2.0.dmg](https://github.com/nKOxxx/AgentVault/releases/download/v1.3.0/AgentVault-1.2.0.dmg) (94 MB) | [AgentVault-1.2.0-arm64.dmg](https://github.com/nKOxxx/AgentVault/releases/download/v1.3.0/AgentVault-1.2.0-arm64.dmg) (89 MB) |
+
+**Install:**
+1. Download the DMG for your Mac
+2. Double-click to open
+3. Drag AgentVault to Applications
+4. Launch!
+
+> ⚠️ **First launch only**: macOS will warn about unsigned app. Right-click → Open, or go to System Settings → Privacy & Security → "Open Anyway".
+
+**[View all releases](https://github.com/nKOxxx/AgentVault/releases)**
+
+**Security:** [v1.3.0 Security Audit](SECURITY_AUDIT_v1.3.0.md) (Score: 8.5/10 ✅)
+
+---
+
+---
+
 ## ⚠️ CRITICAL: BACKUP REQUIRED
 
 **AgentVault stores everything locally. If you lose the vault.db file, your keys are gone forever.**

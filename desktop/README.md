@@ -2,12 +2,21 @@
 
 A secure credential manager for AI agents. Runs as a native desktop app.
 
-## Install
+## Download
+
+**🚀 Latest Release:** https://github.com/nKOxxx/AgentVault/releases/latest
 
 ### macOS
-1. Download `AgentVault-1.2.0.dmg`
-2. Drag AgentVault to Applications
-3. Launch from Applications folder
+- **Intel Macs:** [AgentVault-1.2.0.dmg](https://github.com/nKOxxx/AgentVault/releases/download/v1.3.0/AgentVault-1.2.0.dmg) (94 MB)
+- **Apple Silicon (M1/M2/M3):** [AgentVault-1.2.0-arm64.dmg](https://github.com/nKOxxx/AgentVault/releases/download/v1.3.0/AgentVault-1.2.0-arm64.dmg) (89 MB)
+
+**Install:**
+1. Download the DMG for your Mac
+2. Double-click to open
+3. Drag AgentVault to Applications
+4. Launch!
+
+> ⚠️ **First launch only**: macOS will warn about unsigned app. Right-click → Open, or go to System Settings → Privacy & Security → "Open Anyway".
 
 ### Windows
 1. Download `AgentVault-Setup-1.2.0.exe`

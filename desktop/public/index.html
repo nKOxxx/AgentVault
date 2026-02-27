@@ -4,31 +4,275 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AgentVault</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/theme.css">
   <style>
-    /* Additional component styles */
-    .lock-animation {
-      font-size: 64px;
-      margin-bottom: 24px;
-      animation: pulse 2s ease-in-out infinite;
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: #1a1a24;
+      --bg-hover: #252532;
+      --border-color: #2a2a3a;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0b0;
+      --text-muted: #6a6a7a;
+      --accent-primary: #6366f1;
+      --accent-secondary: #8b5cf6;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --radius-md: 10px;
+      --radius-lg: 16px;
     }
     
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.05); opacity: 0.8; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      min-height: 100vh;
+      color: var(--text-primary);
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
     }
     
-    .vault-actions {
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                  radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: -1;
+    }
+    
+    .container {
+      background: var(--bg-card);
+      border-radius: 0;
+      box-shadow: none;
+      width: 100%;
+      height: 100vh;
+      max-width: none;
+      overflow: hidden;
+      border: none;
       display: flex;
-      gap: 12px;
-      margin-bottom: 24px;
+      flex-direction: column;
     }
     
-    .vault-actions .btn {
-      flex: 1;
+    .header {
+      background: var(--bg-secondary);
+      padding: 24px;
+      text-align: center;
+      border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
     }
+    
+    .header::after {
+      content: '';
+      display: block;
+      height: 2px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+      margin: 0 -24px;
+      margin-top: 24px;
+      margin-bottom: -24px;
+    }
+    
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .header p {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+    
+    .content { 
+      padding: 32px;
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .screen { 
+      display: none;
+      flex: 1;
+      flex-direction: column;
+    }
+    .screen.active { 
+      display: flex; 
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .input-group { margin-bottom: 20px; }
+    
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .input-wrapper { position: relative; }
+    
+    input, select {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 16px 24px;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+      color: white;
+    }
+    
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    .btn-secondary {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+    
+    .credential-list { display: flex; flex-direction: column; gap: 12px; }
+    
+    .credential-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .credential-card:hover {
+      border-color: var(--accent-primary);
+      transform: translateX(4px);
+    }
+    
+    .credential-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--bg-hover);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    
+    .credential-info { flex: 1; }
+    
+    .credential-name {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 2px;
+    }
+    
+    .credential-service {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    
+    .credential-actions { display: flex; gap: 8px; }
+    
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    
+    .icon-btn:hover { background: var(--accent-primary); color: white; }
+    .icon-btn.delete:hover { background: var(--error); }
+    
+    .share-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      font-size: 10px;
+      margin-left: 8px;
+      font-weight: 700;
+    }
+    
+    .share-badge.shared { background: rgba(34, 197, 94, 0.2); color: var(--success); border: 1px solid rgba(34, 197, 94, 0.4); }
+    .share-badge.pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.4); }
+    .share-badge.error { background: rgba(239, 68, 68, 0.2); color: var(--error); border: 1px solid rgba(239, 68, 68, 0.4); }
+    
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+    }
+    
+    .vault-actions { display: flex; gap: 12px; margin-bottom: 24px; }
+    .vault-actions .btn { flex: 1; }
     
     .security-tips {
       background: var(--bg-secondary);
@@ -36,6 +280,8 @@
       border-radius: var(--radius-md);
       padding: 16px;
       margin-top: 24px;
+      font-size: 13px;
+      color: var(--text-muted);
     }
     
     .security-tips h4 {
@@ -44,67 +290,70 @@
       letter-spacing: 0.5px;
       color: var(--text-secondary);
       margin-bottom: 12px;
+    }
+    
+    .security-tips ul { list-style: none; }
+    .security-tips li { padding: 4px 0; padding-left: 20px; position: relative; }
+    .security-tips li::before { content: '✓'; position: absolute; left: 0; color: var(--success); }
+    
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .toast {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
+      min-width: 300px;
+      border-left: 3px solid var(--success);
     }
     
-    .security-tips ul {
-      list-style: none;
-      font-size: 13px;
-      color: var(--text-muted);
+    .toast.error { border-left-color: var(--error); }
+    
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
     }
     
-    .security-tips li {
-      padding: 4px 0;
-      padding-left: 20px;
-      position: relative;
-    }
+    .modal-overlay.active { display: flex; }
     
-    .security-tips li::before {
-      content: '✓';
-      position: absolute;
-      left: 0;
-      color: var(--success);
-    }
-    
-    .reveal-code {
-      font-family: 'SF Mono', Monaco, monospace;
-      font-size: 12px;
-      background: var(--bg-primary);
-      padding: 12px;
-      border-radius: var(--radius-sm);
-      word-break: break-all;
-      color: var(--accent-primary);
-    }
-    
-    .tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 24px;
-      background: var(--bg-secondary);
-      padding: 4px;
-      border-radius: var(--radius-md);
-    }
-    
-    .tab {
-      flex: 1;
-      padding: 10px;
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      border-radius: var(--radius-sm);
-      transition: all 0.2s;
-    }
-    
-    .tab.active {
+    .modal {
       background: var(--bg-card);
-      color: var(--text-primary);
-      box-shadow: var(--shadow-sm);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
+      border: 1px solid var(--border-color);
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
+    
+    .modal-header { padding: 24px 24px 0; }
+    .modal-header h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .modal-header p { color: var(--text-secondary); font-size: 14px; }
+    .modal-body { padding: 24px; overflow-y: auto; }
+    .modal-footer { padding: 0 24px 24px; display: flex; gap: 12px; }
+    .modal-footer .btn { flex: 1; }
     
     .hidden { display: none !important; }
   </style>
@@ -116,40 +365,33 @@
         <div class="logo-icon">🔐</div>
         <h1>AgentVault</h1>
       </div>
-      <p>Secure credential management for AI agents</p>
+      <p>Secure credential management</p>
     </div>
     
     <div class="content">
+      <!-- Auto-lock warning -->
+      <div id="autoLockWarning" style="display: none; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; color: var(--warning); font-size: 13px; text-align: center;">
+        🔒 Vault will auto-lock after 15 minutes of inactivity
+      </div>
+      
       <!-- Setup Screen -->
-      <div class="setup-screen active" id="setupScreen">
+      <div class="screen active" id="setupScreen">
         <div style="text-align: center; margin-bottom: 32px;">
-          <div class="lock-animation">🔐</div>
           <h2 style="font-size: 20px; margin-bottom: 8px;">Create Your Vault</h2>
           <p style="color: var(--text-muted);">Set a master password to secure your credentials</p>
         </div>
         
         <div class="input-group">
           <label>Master Password</label>
-          <div class="input-wrapper">
-            <input type="password" id="setupPassword" placeholder="Create a strong password">
-            <button class="password-toggle" onclick="togglePassword('setupPassword')">👁️</button>
-          </div>
-          <div class="password-strength" id="passwordStrength">
-            <div class="password-strength-bar"></div>
-          </div>
+          <input type="password" id="setupPassword" placeholder="Create a strong password">
         </div>
         
         <div class="input-group">
           <label>Confirm Password</label>
-          <div class="input-wrapper">
-            <input type="password" id="confirmPassword" placeholder="Confirm your password">
-            <button class="password-toggle" onclick="togglePassword('confirmPassword')">👁️</button>
-          </div>
+          <input type="password" id="confirmPassword" placeholder="Confirm your password">
         </div>
         
-        <button class="btn btn-primary" id="createVaultBtn" onclick="createVault()">
-          Create Vault
-        </button>
+        <button class="btn btn-primary" onclick="createVault()">Create Vault</button>
         
         <div class="security-tips">
           <h4>🔒 Security Tips</h4>
@@ -163,43 +405,31 @@
       </div>
       
       <!-- Unlock Screen -->
-      <div class="unlock-screen" id="unlockScreen">
+      <div class="screen" id="unlockScreen">
         <div style="text-align: center; margin-bottom: 32px;">
-          <div class="lock-animation">🔒</div>
           <h2 style="font-size: 20px; margin-bottom: 8px;">Vault Locked</h2>
           <p style="color: var(--text-muted);">Enter your master password to unlock</p>
         </div>
         
         <div class="input-group">
           <label>Master Password</label>
-          <div class="input-wrapper">
-            <input type="password" id="unlockPassword" placeholder="Enter your password" onkeypress="if(event.key==='Enter')unlockVault()">
-            <button class="password-toggle" onclick="togglePassword('unlockPassword')">👁️</button>
-          </div>
+          <input type="password" id="unlockPassword" placeholder="Enter your password">
         </div>
         
-        <button class="btn btn-primary" id="unlockBtn" onclick="unlockVault()">
-          Unlock Vault
-        </button>
+        <button class="btn btn-primary" onclick="unlockVault()">Unlock Vault</button>
       </div>
       
       <!-- Vault Screen -->
-      <div class="vault-screen" id="vaultScreen">
+      <div class="screen" id="vaultScreen">
         <div class="vault-actions">
-          <button class="btn btn-primary" onclick="openAddModal()">
-            <span>+</span> Add Credential
-          </button>
-          <button class="btn btn-secondary" onclick="lockVault()">
-            <span>🔒</span> Lock
-          </button>
+          <button class="btn btn-primary" onclick="openAddModal()">+ Add Credential</button>
+          <button class="btn btn-secondary" onclick="lockVault()">🔒 Lock</button>
         </div>
         
-        <div id="credentialList" class="credential-list">
-          <!-- Credentials loaded here -->
-        </div>
+        <div id="credentialList" class="credential-list"></div>
         
         <div class="empty-state" id="emptyState" style="display: none;">
-          <div class="empty-state-icon">🔑</div>
+          <div style="font-size: 48px; margin-bottom: 16px;">🔑</div>
           <h3>No credentials yet</h3>
           <p>Add your first API key or password</p>
         </div>
@@ -208,7 +438,7 @@
   </div>
   
   <!-- Add Credential Modal -->
-  <div class="modal-overlay" id="addModal">
+  <div class="modal-overlay" id="addModal" onclick="if(event.target===this)closeAddModal()">
     <div class="modal">
       <div class="modal-header">
         <h2>Add Credential</h2>
@@ -217,7 +447,7 @@
       <div class="modal-body">
         <div class="input-group">
           <label>Service</label>
-          <select id="serviceSelect" onchange="onServiceChange()">
+          <select id="serviceSelect">
             <option value="">Select a service...</option>
             <option value="openai">OpenAI</option>
             <option value="anthropic">Anthropic</option>
@@ -229,22 +459,18 @@
         </div>
         
         <div class="input-group">
-          <label>Name (optional)</label>
+          <label>Name</label>
           <input type="text" id="credName" placeholder="e.g., Production API Key">
         </div>
         
-        <div id="customServiceGroup" class="input-group hidden">
-          <label>Custom Service Name</label>
-          <input type="text" id="customService" placeholder="Service name">
-        </div>
-        
-        <div id="fieldsContainer">
-          <!-- Dynamic fields based on service -->
+        <div class="input-group">
+          <label>Value</label>
+          <input type="password" id="credValue" placeholder="Enter API key or password">
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
-        <button class="btn btn-primary" id="saveCredBtn" onclick="saveCredential()">Save Credential</button>
+        <button class="btn btn-primary" onclick="saveCredential()">Save</button>
       </div>
     </div>
   </div>
@@ -253,202 +479,84 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
-    // Service configurations
-    const serviceConfigs = {
-      openai: {
-        icon: '🤖',
-        fields: [{ name: 'apiKey', label: 'API Key', type: 'password', placeholder: 'sk-...' }]
-      },
-      anthropic: {
-        icon: '🧠',
-        fields: [{ name: 'apiKey', label: 'API Key', type: 'password', placeholder: 'sk-ant-...' }]
-      },
-      github: {
-        icon: '🐙',
-        fields: [{ name: 'token', label: 'Personal Access Token', type: 'password', placeholder: 'ghp_...' }]
-      },
-      render: {
-        icon: '⚡',
-        fields: [
-          { name: 'apiKey', label: 'API Key', type: 'password', placeholder: 'rnd_...' },
-          { name: 'serviceId', label: 'Service ID (optional)', type: 'text', placeholder: 'srv-...' }
-        ]
-      },
-      twitter: {
-        icon: '🐦',
-        fields: [
-          { name: 'apiKey', label: 'API Key', type: 'password' },
-          { name: 'apiSecret', label: 'API Secret', type: 'password' },
-          { name: 'accessToken', label: 'Access Token', type: 'password' },
-          { name: 'accessSecret', label: 'Access Token Secret', type: 'password' },
-          { name: 'bearerToken', label: 'Bearer Token (optional)', type: 'password' }
-        ]
-      },
-      custom: {
-        icon: '🔑',
-        fields: [
-          { name: 'key', label: 'Key / Value', type: 'password', placeholder: 'Enter value' }
-        ]
-      }
+    const serviceIcons = {
+      openai: '🤖', anthropic: '🧠', github: '🐙',
+      render: '⚡', twitter: '🐦', custom: '🔑'
     };
     
-    let vaultState = { initialized: false, unlocked: false };
     let credentials = [];
     
-    // Initialize
     async function init() {
-      await checkStatus();
-      setupPasswordStrength();
-    }
-    
-    async function checkStatus() {
-      try {
-        const res = await fetch('/api/status');
-        const data = await res.json();
-        vaultState = data;
-        
-        if (!data.initialized) {
-          showScreen('setup');
-        } else if (!data.unlocked) {
-          showScreen('unlock');
-        } else {
-          showScreen('vault');
-          await loadCredentials();
-        }
-      } catch (err) {
-        showToast('Failed to connect to server', 'error');
+      const status = await window.electronAPI.vaultStatus();
+      if (!status.initialized) {
+        showScreen('setup');
+      } else if (!status.unlocked) {
+        showScreen('unlock');
+      } else {
+        showScreen('vault');
+        document.getElementById('autoLockWarning').style.display = 'block';
+        await loadCredentials();
       }
     }
     
-    function showScreen(screen) {
-      document.querySelectorAll('.setup-screen, .unlock-screen, .vault-screen').forEach(s => s.classList.remove('active'));
-      document.getElementById(screen + 'Screen').classList.add('active');
-    }
-    
-    function togglePassword(id) {
-      const input = document.getElementById(id);
-      input.type = input.type === 'password' ? 'text' : 'password';
-    }
-    
-    function setupPasswordStrength() {
-      const input = document.getElementById('setupPassword');
-      const bar = document.querySelector('#passwordStrength .password-strength-bar');
-      
-      input.addEventListener('input', () => {
-        const val = input.value;
-        let strength = 0;
-        if (val.length >= 8) strength++;
-        if (val.length >= 12) strength++;
-        if (/[A-Z]/.test(val)) strength++;
-        if (/[0-9]/.test(val)) strength++;
-        if (/[^A-Za-z0-9]/.test(val)) strength++;
-        
-        bar.className = 'password-strength-bar';
-        if (strength <= 2) bar.classList.add('strength-weak');
-        else if (strength <= 4) bar.classList.add('strength-medium');
-        else bar.classList.add('strength-strong');
-      });
+    function showScreen(name) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(name + 'Screen').classList.add('active');
     }
     
     async function createVault() {
-      const password = document.getElementById('setupPassword').value;
+      const pw = document.getElementById('setupPassword').value;
       const confirm = document.getElementById('confirmPassword').value;
       
-      if (!password || password.length < 8) {
-        showToast('Password must be at least 8 characters', 'error');
-        return;
-      }
-      if (password !== confirm) {
-        showToast('Passwords do not match', 'error');
-        return;
-      }
+      if (pw.length < 8) return showToast('Password must be 8+ characters', 'error');
+      if (pw !== confirm) return showToast('Passwords do not match', 'error');
       
-      const btn = document.getElementById('createVaultBtn');
-      btn.disabled = true;
-      btn.innerHTML = '<div class="spinner"></div> Creating...';
-      
-      try {
-        const res = await fetch('/api/init', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password })
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-          showToast('Vault created successfully!', 'success');
-          await checkStatus();
-        } else {
-          showToast(data.error || 'Failed to create vault', 'error');
-        }
-      } catch (err) {
-        showToast('Failed to create vault', 'error');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = 'Create Vault';
+      const result = await window.electronAPI.vaultInit({ password: pw });
+      if (result.success) {
+        showToast('Vault created!', 'success');
+        showScreen('vault');
+      } else {
+        showToast(result.error, 'error');
       }
     }
     
     async function unlockVault() {
-      const password = document.getElementById('unlockPassword').value;
-      if (!password) {
-        showToast('Please enter your password', 'error');
-        return;
-      }
-      
-      const btn = document.getElementById('unlockBtn');
-      btn.disabled = true;
-      btn.innerHTML = '<div class="spinner"></div> Unlocking...';
-      
-      try {
-        const res = await fetch('/api/unlock', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password })
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-          showToast('Vault unlocked', 'success');
-          await checkStatus();
+      const pw = document.getElementById('unlockPassword').value;
+      const result = await window.electronAPI.vaultUnlock({ password: pw });
+      if (result.success) {
+        showToast('Vault unlocked', 'success');
+        showScreen('vault');
+        document.getElementById('autoLockWarning').style.display = 'block';
+        await loadCredentials();
+      } else {
+        if (result.remainingAttempts) {
+          showToast(`${result.error} (${result.remainingAttempts} attempts remaining)`, 'error');
+        } else if (result.locked) {
+          showToast(`${result.error} Locked for ${result.remainingMinutes} minutes.`, 'error');
         } else {
-          showToast('Invalid password', 'error');
+          showToast(result.error, 'error');
         }
-      } catch (err) {
-        showToast('Failed to unlock', 'error');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = 'Unlock Vault';
       }
     }
     
     async function lockVault() {
-      try {
-        await fetch('/api/logout', { method: 'POST' });
-        showToast('Vault locked', 'success');
-        await checkStatus();
-      } catch (err) {
-        showToast('Failed to lock', 'error');
-      }
+      await window.electronAPI.vaultLock();
+      showToast('Vault locked', 'success');
+      document.getElementById('autoLockWarning').style.display = 'none';
+      showScreen('unlock');
     }
     
     async function loadCredentials() {
-      try {
-        const res = await fetch('/api/keys');
-        const data = await res.json();
-        // API returns array directly, not {keys: [...]}
-        credentials = Array.isArray(data) ? data : (data.keys || []);
-        renderCredentials();
-      } catch (err) {
-        showToast('Failed to load credentials', 'error');
-      }
+      const result = await window.electronAPI.keysList();
+      credentials = result.keys || [];
+      renderCredentials();
     }
     
     function renderCredentials() {
       const list = document.getElementById('credentialList');
       const empty = document.getElementById('emptyState');
       
-      if (!credentials || credentials.length === 0) {
+      if (!credentials.length) {
         list.innerHTML = '';
         empty.style.display = 'block';
         return;
@@ -456,30 +564,22 @@
       
       empty.style.display = 'none';
       list.innerHTML = credentials.map(cred => {
-        const service = cred.service || 'custom';
-        const config = serviceConfigs[service] || serviceConfigs.custom;
-        
-        // Share status badge
-        let statusBadge = '';
+        const icon = serviceIcons[cred.service] || '🔑';
         const status = cred.share_status || 'none';
-        if (status === 'shared') {
-          statusBadge = '<span class="share-badge shared" title="Shared with agent">✓</span>';
-        } else if (status === 'pending') {
-          statusBadge = '<span class="share-badge pending" title="Sharing...">⏳</span>';
-        } else if (status === 'error') {
-          statusBadge = '<span class="share-badge error" title="Share failed">✕</span>';
-        }
+        let badge = '';
+        if (status === 'shared') badge = '<span class="share-badge shared">✓</span>';
+        else if (status === 'pending') badge = '<span class="share-badge pending">⏳</span>';
+        else if (status === 'error') badge = '<span class="share-badge error">✕</span>';
         
         return `
           <div class="credential-card">
-            <div class="credential-icon">${config.icon}</div>
+            <div class="credential-icon">${icon}</div>
             <div class="credential-info">
-              <div class="credential-name">${cred.name || service} ${statusBadge}</div>
-              <div class="credential-service">${service}</div>
+              <div class="credential-name">${cred.name || cred.service} ${badge}</div>
+              <div class="credential-service">${cred.service}</div>
             </div>
             <div class="credential-actions">
               <button class="icon-btn" onclick="copyCredential('${cred.id}')" title="Copy">📋</button>
-              <button class="icon-btn" onclick="shareCredential('${cred.id}')" title="Share to Agent">📤</button>
               <button class="icon-btn delete" onclick="deleteCredential('${cred.id}')" title="Delete">🗑️</button>
             </div>
           </div>
@@ -491,191 +591,72 @@
       document.getElementById('addModal').classList.add('active');
       document.getElementById('serviceSelect').value = '';
       document.getElementById('credName').value = '';
-      document.getElementById('fieldsContainer').innerHTML = '';
-      document.getElementById('customServiceGroup').classList.add('hidden');
+      document.getElementById('credValue').value = '';
     }
     
     function closeAddModal() {
       document.getElementById('addModal').classList.remove('active');
     }
     
-    function onServiceChange() {
-      const service = document.getElementById('serviceSelect').value;
-      const customGroup = document.getElementById('customServiceGroup');
-      const container = document.getElementById('fieldsContainer');
-      
-      if (service === 'custom') {
-        customGroup.classList.remove('hidden');
-      } else {
-        customGroup.classList.add('hidden');
-      }
-      
-      if (!service) {
-        container.innerHTML = '';
-        return;
-      }
-      
-      const config = serviceConfigs[service] || serviceConfigs.custom;
-      container.innerHTML = config.fields.map(field => `
-        <div class="input-group">
-          <label>${field.label}</label>
-          <div class="input-wrapper">
-            <input type="${field.type}" id="field_${field.name}" placeholder="${field.placeholder || ''}">
-            ${field.type === 'password' ? `<button class="password-toggle" onclick="togglePassword('field_${field.name}')">👁️</button>` : ''}
-          </div>
-        </div>
-      `).join('');
-    }
-    
     async function saveCredential() {
       const service = document.getElementById('serviceSelect').value;
       const name = document.getElementById('credName').value;
+      const value = document.getElementById('credValue').value;
       
-      if (!service) {
-        showToast('Please select a service', 'error');
-        return;
-      }
+      if (!service || !value) return showToast('Service and value required', 'error');
       
-      const config = serviceConfigs[service] || serviceConfigs.custom;
-      const fields = {};
+      const result = await window.electronAPI.keysAdd({
+        name: name || service,
+        service,
+        value
+      });
       
-      for (const field of config.fields) {
-        const val = document.getElementById(`field_${field.name}`)?.value;
-        if (val) fields[field.name] = val;
-      }
-      
-      // Build value from fields
-      let value = '';
-      if (service === 'twitter') {
-        // X/Twitter needs special format
-        value = JSON.stringify(fields);
-      } else if (service === 'render') {
-        value = fields.apiKey || '';
+      if (result.success) {
+        showToast('Credential saved', 'success');
+        closeAddModal();
+        await loadCredentials();
       } else {
-        value = Object.values(fields).join('\n');
-      }
-      
-      const displayName = name || `${service} ${new Date().toLocaleDateString()}`;
-      
-      const btn = document.getElementById('saveCredBtn');
-      btn.disabled = true;
-      btn.innerHTML = '<div class="spinner"></div> Saving...';
-      
-      try {
-        const res = await fetch('/api/keys', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            name: displayName, 
-            service: service === 'custom' ? document.getElementById('customService')?.value || 'custom' : service, 
-            value: value 
-          })
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-          showToast('Credential saved', 'success');
-          closeAddModal();
-          await loadCredentials();
-        } else {
-          showToast(data.error || 'Failed to save', 'error');
-        }
-      } catch (err) {
-        showToast('Failed to save credential', 'error');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = 'Save Credential';
+        showToast(result.error, 'error');
       }
     }
     
     async function copyCredential(id) {
-      try {
-        const res = await fetch(`/api/keys/${id}/value`);
-        const data = await res.json();
-        
-        // API returns {name, service, url, value} directly, no success field
-        if (data.value) {
-          await navigator.clipboard.writeText(data.value);
-          showToast('Copied to clipboard', 'success');
-        } else if (data.error) {
-          showToast(data.error, 'error');
-        } else {
-          showToast('Failed to get value', 'error');
-        }
-      } catch (err) {
+      const result = await window.electronAPI.keysGet({ id });
+      if (result.success) {
+        await navigator.clipboard.writeText(result.value);
+        showToast('Copied to clipboard', 'success');
+      } else {
         showToast('Failed to copy', 'error');
-      }
-    }
-    
-    async function shareCredential(id) {
-      const btn = event.target.closest('.icon-btn');
-      btn.disabled = true;
-      btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;"></div>';
-      
-      // Optimistically set to pending
-      const cred = credentials.find(c => c.id === id);
-      if (cred) {
-        cred.share_status = 'pending';
-        renderCredentials();
-      }
-      
-      try {
-        const res = await fetch(`/api/keys/${id}/share`, { method: 'POST' });
-        const data = await res.json();
-        
-        if (data.success) {
-          showToast('Shared to OpenClaw agent', 'success');
-          // Refresh to get updated status
-          await loadCredentials();
-        } else {
-          showToast(data.error || 'Failed to share', 'error');
-          await loadCredentials();
-        }
-      } catch (err) {
-        showToast('Failed to share - agent not connected', 'error');
-        await loadCredentials();
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '📤';
       }
     }
     
     async function deleteCredential(id) {
       if (!confirm('Delete this credential?')) return;
-      
-      try {
-        const res = await fetch(`/api/keys/${id}`, { method: 'DELETE' });
-        const data = await res.json();
-        
-        if (data.success) {
-          showToast('Credential deleted', 'success');
-          await loadCredentials();
-        } else {
-          showToast('Failed to delete', 'error');
-        }
-      } catch (err) {
-        showToast('Failed to delete', 'error');
+      const result = await window.electronAPI.keysDelete({ id });
+      if (result.success) {
+        showToast('Deleted', 'success');
+        await loadCredentials();
       }
     }
     
-    function showToast(message, type = 'info') {
+    function showToast(message, type = 'success') {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      toast.innerHTML = `
-        <span>${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span>
-        <span>${message}</span>
-      `;
+      toast.className = 'toast ' + type;
+      toast.innerHTML = `<span>${type === 'success' ? '✓' : '✕'}</span><span>${message}</span>`;
       container.appendChild(toast);
-      setTimeout(() => toast.remove(), 4000);
+      setTimeout(() => toast.remove(), 3000);
     }
     
-    // Close modal on overlay click
-    document.getElementById('addModal').addEventListener('click', (e) => {
-      if (e.target.id === 'addModal') closeAddModal();
-    });
+    // Listen for auto-lock events from main process
+    if (window.electronAPI && window.electronAPI.onVaultAutoLocked) {
+      window.electronAPI.onVaultAutoLocked(() => {
+        showToast('Vault auto-locked due to inactivity', 'error');
+        document.getElementById('autoLockWarning').style.display = 'none';
+        showScreen('unlock');
+      });
+    }
     
-    // Initialize
     init();
   </script>
 </body>
