@@ -21,7 +21,8 @@
       "main-simple.js",
       "preload.js",
       "public/**/*",
-      "entitlements.mac.plist"
+      "entitlements.mac.plist",
+      "agentvault-receiver.js"
     ],
     "mac": {
       "category": "public.app-category.productivity",
