@@ -400,57 +400,48 @@ if (!fs.existsSync(userDataPath)) {
 }
 
 // === REAL SHARING TO OPENCLAW ===
-// Replace the keys-share handler with real implementation
+// Directly register the real handler (overwrites the dummy one)
 
-// Remove old handler and add new one
-const originalHandle = ipcMain.handle;
-ipcMain.handle = function(channel, handler) {
-  if (channel === 'keys-share') {
-    // Replace with real implementation
-    originalHandle.call(ipcMain, channel, async (event, { id, agentId }) => {
-      if (!vaultPassword) return { error: 'Vault locked' };
-      
-      resetInactivityTimer();
-      
-      const keyIndex = vaultData.keys.findIndex(k => k.id === id);
-      if (keyIndex === -1) return { error: 'Key not found' };
-      
-      const credential = vaultData.keys[keyIndex];
-      
-      // Mark as pending
-      vaultData.keys[keyIndex].share_status = 'pending';
-      saveVault(vaultData, vaultPassword);
-      
-      // Send to OpenClaw
-      try {
-        const response = await fetch('http://localhost:8765/receive', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: credential.id,
-            name: credential.name,
-            service: credential.service,
-            value: credential.value,
-            shared_by: agentId || 'user',
-            shared_at: new Date().toISOString()
-          })
-        });
-        
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        
-        vaultData.keys[keyIndex].share_status = 'shared';
-        vaultData.keys[keyIndex].shared_with = 'ares';
-        vaultData.keys[keyIndex].shared_at = new Date().toISOString();
-        saveVault(vaultData, vaultPassword);
-        
-        return { success: true, message: 'Credential sent to Ares' };
-      } catch (err) {
-        vaultData.keys[keyIndex].share_status = 'error';
-        saveVault(vaultData, vaultPassword);
-        return { error: 'Failed to send. Is OpenClaw running?', details: err.message };
-      }
+ipcMain.handle('keys-share', async (event, { id, agentId }) => {
+  if (!vaultPassword) return { error: 'Vault locked' };
+  
+  resetInactivityTimer();
+  
+  const keyIndex = vaultData.keys.findIndex(k => k.id === id);
+  if (keyIndex === -1) return { error: 'Key not found' };
+  
+  const credential = vaultData.keys[keyIndex];
+  
+  // Mark as pending
+  vaultData.keys[keyIndex].share_status = 'pending';
+  saveVault(vaultData, vaultPassword);
+  
+  // Send to OpenClaw
+  try {
+    const response = await fetch('http://localhost:8765/receive', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: credential.id,
+        name: credential.name,
+        service: credential.service,
+        value: credential.value,
+        shared_by: agentId || 'user',
+        shared_at: new Date().toISOString()
+      })
     });
-  } else {
-    originalHandle.call(ipcMain, channel, handler);
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    vaultData.keys[keyIndex].share_status = 'shared';
+    vaultData.keys[keyIndex].shared_with = 'ares';
+    vaultData.keys[keyIndex].shared_at = new Date().toISOString();
+    saveVault(vaultData, vaultPassword);
+    
+    return { success: true, message: 'Credential sent to Ares' };
+  } catch (err) {
+    vaultData.keys[keyIndex].share_status = 'error';
+    saveVault(vaultData, vaultPassword);
+    return { error: 'Failed to send. Is OpenClaw running?', details: err.message };
   }
-};
+});
