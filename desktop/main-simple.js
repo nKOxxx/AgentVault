@@ -1,6 +1,7 @@
 const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
 
 // Keep references to prevent garbage collection
 let mainWindow = null;
@@ -375,7 +376,6 @@ ipcMain.handle('keys-unshare', (event, { id }) => {
 
 // App event handlers
 // Start AgentVault credential receiver (embedded HTTP server)
-const http = require('http');
 let receiverServer = null;
 
 function startReceiver() {
