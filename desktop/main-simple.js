@@ -355,25 +355,6 @@ ipcMain.handle('keys-edit', (event, { id, updates }) => {
   return { success: true };
 });
 
-PLACEHOLDER
-PLACEHOLDER
-PLACEHOLDER
-PLACEHOLDER
-PLACEHOLDER
-PLACEHOLDER
-PLACEHOLDER
-PLACEHOLDER
-PLACEHOLDER
-PLACEHOLDER
-PLACEHOLDER
-PLACEHOLDER
-PLACEHOLDER
-PLACEHOLDER
-PLACEHOLDER
-PLACEHOLDER
-PLACEHOLDER
-PLACEHOLDER
-});
 
 ipcMain.handle('keys-unshare', (event, { id }) => {
   if (!vaultPassword) return { error: 'Vault locked' };
