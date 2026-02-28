@@ -399,6 +399,79 @@ app.on('before-quit', () => {
   }
 });
 
+// Start AgentVault credential receiver (embedded HTTP server)
+const http = require('http');
+let receiverServer = null;
+
+function startReceiver() {
+  const RECEIVED_DIR = path.join(app.getPath('userData'), 'agentvault-received');
+  if (!fs.existsSync(RECEIVED_DIR)) {
+    fs.mkdirSync(RECEIVED_DIR, { recursive: true });
+  }
+  
+  receiverServer = http.createServer((req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    if (req.method === 'OPTIONS') {
+      res.writeHead(200);
+      res.end();
+      return;
+    }
+    
+    if (req.method === 'POST' && req.url === '/receive') {
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', () => {
+        try {
+          const data = JSON.parse(body);
+          if (!data.id || !data.name || !data.value) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Missing fields' }));
+            return;
+          }
+          
+          const filename = `credential-${data.id}-${Date.now()}.json`;
+          const filepath = path.join(RECEIVED_DIR, filename);
+          const credentialData = {
+            received_at: new Date().toISOString(),
+            from: 'AgentVault',
+            acknowledged: false,
+            credential: data
+          };
+          
+          fs.writeFileSync(filepath, JSON.stringify(credentialData, null, 2), { mode: 0o600 });
+          console.log('[AgentVault] Received credential:', data.name);
+          
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, message: 'Credential received' }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Failed to process' }));
+        }
+      });
+    } else {
+      res.writeHead(404);
+      res.end('Not found');
+    }
+  });
+  
+  receiverServer.listen(8765, () => {
+    console.log('[AgentVault] Receiver listening on port 8765');
+  });
+}
+
+// Start receiver when app starts
+startReceiver();
+
+// Cleanup on quit
+app.on('before-quit', () => {
+  if (receiverServer) {
+    receiverServer.close();
+  }
+});
+
 app.whenReady().then(() => {
   createWindow();
   createTray();
