@@ -1,6 +1,6 @@
 {
   "name": "AgentVault",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "Secure credential management for AI agents",
   "main": "main-simple.js",
   "scripts": {
@@ -24,33 +24,32 @@
       "entitlements.mac.plist"
     ],
     "mac": {
-      "category": "public.app-category.utilities",
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.icns",
       "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ],
-      "entitlements": "entitlements.mac.plist",
-      "entitlementsInherit": "entitlements.mac.plist",
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false,
-      "asarUnpack": []
+        "dmg",
+        "zip"
+      ]
     },
     "win": {
       "target": "nsis"
     },
     "linux": {
       "target": "AppImage"
-    }
+    },
+    "fileAssociations": [
+      {
+        "ext": "vault",
+        "name": "AgentVault Database",
+        "icon": "build/icon.icns"
+      }
+    ]
   },
   "author": "Nikola Stojanow",
   "license": "MIT",
   "devDependencies": {
     "electron": "^28.0.0",
     "electron-builder": "^24.9.1"
-  }
+  },
+  "productName": "AgentVault"
 }
