@@ -1,6 +1,5 @@
 const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell } = require('electron');
 const path = require('path');
-const { spawn } = require('child_process');
 const fs = require('fs');
 
 // Keep references to prevent garbage collection
@@ -375,6 +374,31 @@ ipcMain.handle('keys-unshare', (event, { id }) => {
 });
 
 // App event handlers
+// Start AgentVault credential receiver
+let receiverProcess = null;
+
+function startReceiver() {
+  const receiverPath = path.join(__dirname, 'agentvault-receiver.js');
+  if (fs.existsSync(receiverPath)) {
+    receiverProcess = spawn('node', [receiverPath], {
+      detached: true,
+      stdio: 'ignore'
+    });
+    receiverProcess.unref();
+    console.log('[AgentVault] Started credential receiver');
+  }
+}
+
+// Start receiver when app starts
+startReceiver();
+
+// Cleanup on quit
+app.on('before-quit', () => {
+  if (receiverProcess) {
+    receiverProcess.kill();
+  }
+});
+
 app.whenReady().then(() => {
   createWindow();
   createTray();
