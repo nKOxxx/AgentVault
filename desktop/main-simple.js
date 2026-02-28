@@ -335,6 +335,64 @@ ipcMain.handle('keys-get', (event, { id }) => {
   return { success: true, value: key.value };
 });
 
+ipcMain.handle('keys-edit', (event, { id, updates }) => {
+  if (!vaultPassword) return { error: 'Vault locked' };
+  
+  // Security: Reset inactivity timer on user activity
+  resetInactivityTimer();
+  
+  const keyIndex = vaultData.keys.findIndex(k => k.id === id);
+  if (keyIndex === -1) return { error: 'Key not found' };
+  
+  // Update allowed fields
+  if (updates.name !== undefined) vaultData.keys[keyIndex].name = updates.name;
+  if (updates.service !== undefined) vaultData.keys[keyIndex].service = updates.service;
+  if (updates.value !== undefined) vaultData.keys[keyIndex].value = updates.value;
+  vaultData.keys[keyIndex].updated_at = new Date().toISOString();
+  
+  saveVault(vaultData, vaultPassword);
+  
+  return { success: true };
+});
+
+ipcMain.handle('keys-share', (event, { id, agentId }) => {
+  if (!vaultPassword) return { error: 'Vault locked' };
+  
+  // Security: Reset inactivity timer on user activity
+  resetInactivityTimer();
+  
+  const keyIndex = vaultData.keys.findIndex(k => k.id === id);
+  if (keyIndex === -1) return { error: 'Key not found' };
+  
+  // In desktop version, we just mark as shared locally
+  // Full sharing would require server integration
+  vaultData.keys[keyIndex].share_status = 'shared';
+  vaultData.keys[keyIndex].shared_with = agentId || 'agent';
+  vaultData.keys[keyIndex].shared_at = new Date().toISOString();
+  
+  saveVault(vaultData, vaultPassword);
+  
+  return { success: true, message: 'Credential marked as shared' };
+});
+
+ipcMain.handle('keys-unshare', (event, { id }) => {
+  if (!vaultPassword) return { error: 'Vault locked' };
+  
+  // Security: Reset inactivity timer on user activity
+  resetInactivityTimer();
+  
+  const keyIndex = vaultData.keys.findIndex(k => k.id === id);
+  if (keyIndex === -1) return { error: 'Key not found' };
+  
+  vaultData.keys[keyIndex].share_status = 'none';
+  delete vaultData.keys[keyIndex].shared_with;
+  delete vaultData.keys[keyIndex].shared_at;
+  
+  saveVault(vaultData, vaultPassword);
+  
+  return { success: true };
+});
+
 // App event handlers
 app.whenReady().then(() => {
   createWindow();

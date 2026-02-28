@@ -475,6 +475,55 @@
     </div>
   </div>
   
+  <!-- Edit Credential Modal -->
+  <div class="modal-overlay" id="editModal" onclick="if(event.target===this)closeEditModal()">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Edit Credential</h2>
+        <p>Update your credential details</p>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label>Name</label>
+          <input type="text" id="editCredName" placeholder="e.g., Production API Key">
+        </div>
+        <div class="input-group">
+          <label>Value</label>
+          <input type="password" id="editCredValue" placeholder="Enter new value (leave blank to keep current)">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share Credential Modal -->
+  <div class="modal-overlay" id="shareModal" onclick="if(event.target===this)closeShareModal()">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Share with Agent</h2>
+        <p>Share this credential securely with an AI agent</p>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label>Agent ID (optional)</label>
+          <input type="text" id="shareAgentId" placeholder="e.g., ares-dev, claude-code">
+        </div>
+        <div style="background: var(--bg-secondary); border-radius: 8px; padding: 16px; margin-top: 16px; font-size: 13px; color: var(--text-muted);">
+          <strong style="color: var(--text-secondary);">⚠️ Security Notice</strong><br>
+          Sharing credentials with agents allows them to access your API keys. 
+          Only share with trusted agents you control.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeShareModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="shareCredential()">Share Credential</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -580,6 +629,11 @@
             </div>
             <div class="credential-actions">
               <button class="icon-btn" onclick="copyCredential('${cred.id}')" title="Copy">📋</button>
+              <button class="icon-btn" onclick="openEditModal('${cred.id}')" title="Edit">✏️</button>
+              ${status === 'none' 
+                ? `<button class="icon-btn" onclick="openShareModal('${cred.id}')" title="Share with Agent">🔗</button>`
+                : `<button class="icon-btn" onclick="unshareCredential('${cred.id}')" title="Unshare">🔒</button>`
+              }
               <button class="icon-btn delete" onclick="deleteCredential('${cred.id}')" title="Delete">🗑️</button>
             </div>
           </div>
@@ -646,6 +700,84 @@
       toast.innerHTML = `<span>${type === 'success' ? '✓' : '✕'}</span><span>${message}</span>`;
       container.appendChild(toast);
       setTimeout(() => toast.remove(), 3000);
+    }
+    
+    // Edit modal functions
+    let editingId = null;
+    
+    function openEditModal(id) {
+      editingId = id;
+      const cred = credentials.find(c => c.id === id);
+      if (cred) {
+        document.getElementById('editCredName').value = cred.name || '';
+        document.getElementById('editCredValue').value = '';
+        document.getElementById('editModal').classList.add('active');
+      }
+    }
+    
+    function closeEditModal() {
+      document.getElementById('editModal').classList.remove('active');
+      editingId = null;
+    }
+    
+    async function saveEdit() {
+      if (!editingId) return;
+      
+      const name = document.getElementById('editCredName').value;
+      const value = document.getElementById('editCredValue').value;
+      
+      const updates = { name };
+      if (value) updates.value = value;
+      
+      const result = await window.electronAPI.keysEdit({ id: editingId, updates });
+      if (result.success) {
+        showToast('Credential updated', 'success');
+        closeEditModal();
+        await loadCredentials();
+      } else {
+        showToast(result.error, 'error');
+      }
+    }
+    
+    // Share modal functions
+    let sharingId = null;
+    
+    function openShareModal(id) {
+      sharingId = id;
+      document.getElementById('shareAgentId').value = '';
+      document.getElementById('shareModal').classList.add('active');
+    }
+    
+    function closeShareModal() {
+      document.getElementById('shareModal').classList.remove('active');
+      sharingId = null;
+    }
+    
+    async function shareCredential() {
+      if (!sharingId) return;
+      
+      const agentId = document.getElementById('shareAgentId').value;
+      const result = await window.electronAPI.keysShare({ id: sharingId, agentId });
+      
+      if (result.success) {
+        showToast('Credential shared', 'success');
+        closeShareModal();
+        await loadCredentials();
+      } else {
+        showToast(result.error, 'error');
+      }
+    }
+    
+    async function unshareCredential(id) {
+      if (!confirm('Stop sharing this credential?')) return;
+      
+      const result = await window.electronAPI.keysUnshare({ id });
+      if (result.success) {
+        showToast('Sharing stopped', 'success');
+        await loadCredentials();
+      } else {
+        showToast(result.error, 'error');
+      }
     }
     
     // Listen for auto-lock events from main process

@@ -13,6 +13,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   keysAdd: (data) => ipcRenderer.invoke('keys-add', data),
   keysDelete: (data) => ipcRenderer.invoke('keys-delete', data),
   keysGet: (data) => ipcRenderer.invoke('keys-get', data),
+  keysEdit: (data) => ipcRenderer.invoke('keys-edit', data),
+  keysShare: (data) => ipcRenderer.invoke('keys-share', data),
+  keysUnshare: (data) => ipcRenderer.invoke('keys-unshare', data),
   
   // App info
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
