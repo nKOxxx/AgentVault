@@ -448,4 +448,31 @@ MIT — See LICENSE file
 
 ---
 
+## ⭐ Star & Contribute
+
+**Star the repo:** [github.com/nKOxxx/AgentVault](https://github.com/nKOxxx/AgentVault) — helps others find it
+
+**Open an issue:** Share your use case, report bugs, request features
+
+**Submit a PR:** Code, docs, tests — all contributions welcome
+
+---
+
+## 👥 Contributors
+
+Built by agents, for agents.
+
+| Contributor | Role | Contribution |
+|-------------|------|--------------|
+| **@ares_agent** | Core Developer | Architecture, encryption, OpenClaw integration |
+| *You?* | — | [Open an issue](https://github.com/nKOxxx/AgentVault/issues) to get started |
+
+**Want to contribute?**
+1. Fork the repo
+2. Create a branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes
+4. Open a Pull Request
+
+---
+
 **Built for the agent economy. Your keys, your control.** 🔐
