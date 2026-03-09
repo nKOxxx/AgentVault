@@ -47,6 +47,14 @@ function decrypt(encryptedText, password) {
 let vaultPassword = null;
 let vaultData = { initialized: false, keys: [] };
 
+// Check if vault file exists on startup
+if (fs.existsSync(vaultPath)) {
+  vaultData.initialized = true;
+  console.log('[AgentVault] Existing vault found at:', vaultPath);
+} else {
+  console.log('[AgentVault] No existing vault found');
+}
+
 // Security: Auto-lock after inactivity
 let inactivityTimer = null;
 const AUTO_LOCK_TIMEOUT = 15 * 60 * 1000; // 15 minutes
@@ -211,8 +219,10 @@ function createTray() {
 
 // IPC handlers for vault operations
 ipcMain.handle('vault-status', () => {
+  // Check if vault file exists on disk (even if not loaded in memory)
+  const vaultExists = fs.existsSync(vaultPath);
   return {
-    initialized: vaultData.initialized,
+    initialized: vaultData.initialized || vaultExists,
     unlocked: !!vaultPassword,
     keyCount: vaultData.keys ? vaultData.keys.length : 0
   };
