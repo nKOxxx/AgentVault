@@ -10,7 +10,7 @@ let serverProcess = null;
 
 // Get app data directory for storing vault
 const userDataPath = app.getPath('userData');
-const vaultPath = path.join(userDataPath, 'vault.json');
+let vaultPath = path.join(userDataPath, 'vault.json');
 const configPath = path.join(userDataPath, 'config.json');
 
 // Simple encryption (for production, use better encryption)
@@ -550,8 +550,13 @@ app.whenReady().then(() => {
   
   if (fs.existsSync(readyVaultPath)) {
     vaultData.initialized = true;
-    console.log('[AgentVault] Vault detected after app ready');
+    vaultPath = readyVaultPath; // Update the global path
+    console.log('[AgentVault] Vault detected after app ready - SET initialized = true');
+  } else {
+    console.log('[AgentVault] No vault found at readyVaultPath');
   }
+  
+  console.log('[AgentVault] Final vaultData.initialized:', vaultData.initialized);
   
   createWindow();
   createTray();
