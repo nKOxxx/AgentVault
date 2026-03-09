@@ -9,6 +9,8 @@ let tray = null;
 let serverProcess = null;
 
 // Get app data directory for storing vault
+console.log('[AgentVault] BEFORE app.ready - app.name:', app.name);
+console.log('[AgentVault] BEFORE app.ready - app.getPath(userData):', app.getPath('userData'));
 const userDataPath = app.getPath('userData');
 let vaultPath = path.join(userDataPath, 'vault.json');
 const configPath = path.join(userDataPath, 'config.json');
