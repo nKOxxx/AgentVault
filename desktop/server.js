@@ -136,9 +136,18 @@ function rateLimitMiddleware(req, res, next) {
   next();
 }
 
-// Database setup
-const DB_PATH = process.env.AGENTVAULT_DATA_DIR ? path.join(process.env.AGENTVAULT_DATA_DIR, 'vault.db') : path.join(__dirname, 'vault.db');
-const AUDIT_LOG_PATH = process.env.AGENTVAULT_DATA_DIR ? path.join(process.env.AGENTVAULT_DATA_DIR, 'audit.log') : path.join(__dirname, 'audit.log');
+// Database setup - Use OS-specific app data directory
+const os = require('os');
+const APP_DATA_DIR = process.env.AGENTVAULT_DATA_DIR || 
+  (process.platform === 'darwin' ? path.join(os.homedir(), 'Library/Application Support/AgentVault') :
+   process.platform === 'win32' ? path.join(os.homedir(), 'AppData/Roaming/AgentVault') :
+   path.join(os.homedir(), '.config/AgentVault'));
+
+const DB_PATH = path.join(APP_DATA_DIR, 'vault.db');
+const AUDIT_LOG_PATH = path.join(APP_DATA_DIR, 'audit.log');
+
+console.log('[AgentVault] App data directory:', APP_DATA_DIR);
+console.log('[AgentVault] Database path:', DB_PATH);
 let db;
 let encryptionKey = null;
 let maxKeys = 20;
