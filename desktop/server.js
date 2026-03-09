@@ -217,15 +217,33 @@ function getAuditLog(limit = 100) {
 
 // Initialize database
 function initDB() {
+  // Debug: Log environment and paths
+  console.log('[AgentVault] AGENTVAULT_DATA_DIR:', process.env.AGENTVAULT_DATA_DIR);
+  console.log('[AgentVault] __dirname:', __dirname);
+  console.log('[AgentVault] DB_PATH:', DB_PATH);
+  
   // Ensure directory exists
   const dbDir = path.dirname(DB_PATH);
+  console.log('[AgentVault] Database directory:', dbDir);
+  console.log('[AgentVault] Directory exists:', fs.existsSync(dbDir));
+  
   if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-    console.log('[AgentVault] Created database directory:', dbDir);
+    try {
+      fs.mkdirSync(dbDir, { recursive: true });
+      console.log('[AgentVault] Created database directory:', dbDir);
+    } catch (e) {
+      console.error('[AgentVault] Failed to create directory:', e.message);
+    }
   }
   
-  db = new sqlite3.Database(DB_PATH);
-  console.log('[AgentVault] Database path:', DB_PATH);
+  console.log('[AgentVault] Opening database at:', DB_PATH);
+  db = new sqlite3.Database(DB_PATH, (err) => {
+    if (err) {
+      console.error('[AgentVault] Database open error:', err.message);
+    } else {
+      console.log('[AgentVault] Database opened successfully');
+    }
+  });
   db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS vault_meta (
       key TEXT PRIMARY KEY,
