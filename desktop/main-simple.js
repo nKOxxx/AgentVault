@@ -221,6 +221,11 @@ function createTray() {
 ipcMain.handle('vault-status', () => {
   // Check if vault file exists on disk (even if not loaded in memory)
   const vaultExists = fs.existsSync(vaultPath);
+  console.log('[AgentVault] vault-status called:');
+  console.log('  vaultPath:', vaultPath);
+  console.log('  vaultExists:', vaultExists);
+  console.log('  vaultData.initialized:', vaultData.initialized);
+  console.log('  returning initialized:', vaultData.initialized || vaultExists);
   return {
     initialized: vaultData.initialized || vaultExists,
     unlocked: !!vaultPassword,
@@ -230,11 +235,14 @@ ipcMain.handle('vault-status', () => {
 
 ipcMain.handle('vault-init', (event, { password }) => {
   try {
+    console.log('[AgentVault] vault-init called, saving to:', vaultPath);
     vaultData = { initialized: true, keys: [] };
     saveVault(vaultData, password);
     vaultPassword = password;
+    console.log('[AgentVault] vault saved successfully');
     return { success: true };
   } catch (e) {
+    console.error('[AgentVault] vault-init failed:', e.message);
     return { error: e.message };
   }
 });
