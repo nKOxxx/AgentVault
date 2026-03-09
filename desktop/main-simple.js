@@ -48,11 +48,14 @@ let vaultPassword = null;
 let vaultData = { initialized: false, keys: [] };
 
 // Check if vault file exists on startup
+console.log('[AgentVault] Checking for vault at:', vaultPath);
+console.log('[AgentVault] userDataPath is:', userDataPath);
+console.log('[AgentVault] File exists check:', fs.existsSync(vaultPath));
 if (fs.existsSync(vaultPath)) {
   vaultData.initialized = true;
   console.log('[AgentVault] Existing vault found at:', vaultPath);
 } else {
-  console.log('[AgentVault] No existing vault found');
+  console.log('[AgentVault] No existing vault found at:', vaultPath);
 }
 
 // Security: Auto-lock after inactivity
@@ -530,6 +533,18 @@ app.on('before-quit', () => {
 });
 
 app.whenReady().then(() => {
+  // Re-check vault path after app is ready (path might be different)
+  const readyUserDataPath = app.getPath('userData');
+  const readyVaultPath = path.join(readyUserDataPath, 'vault.json');
+  console.log('[AgentVault] App ready - userDataPath:', readyUserDataPath);
+  console.log('[AgentVault] App ready - vaultPath:', readyVaultPath);
+  console.log('[AgentVault] App ready - vault exists:', fs.existsSync(readyVaultPath));
+  
+  if (fs.existsSync(readyVaultPath)) {
+    vaultData.initialized = true;
+    console.log('[AgentVault] Vault detected after app ready');
+  }
+  
   createWindow();
   createTray();
 
