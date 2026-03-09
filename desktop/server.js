@@ -217,7 +217,15 @@ function getAuditLog(limit = 100) {
 
 // Initialize database
 function initDB() {
+  // Ensure directory exists
+  const dbDir = path.dirname(DB_PATH);
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+    console.log('[AgentVault] Created database directory:', dbDir);
+  }
+  
   db = new sqlite3.Database(DB_PATH);
+  console.log('[AgentVault] Database path:', DB_PATH);
   db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS vault_meta (
       key TEXT PRIMARY KEY,
