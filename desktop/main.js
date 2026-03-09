@@ -10,6 +10,8 @@ let serverProcess = null;
 // Get app data directory for storing vault
 const userDataPath = app.getPath('userData');
 process.env.AGENTVAULT_DATA_DIR = userDataPath;
+console.log('[Main] userDataPath:', userDataPath);
+console.log('[Main] AGENTVAULT_DATA_DIR:', process.env.AGENTVAULT_DATA_DIR);
 
 function createWindow() {
   // Create the browser window
@@ -97,6 +99,7 @@ function createTray() {
 function startServer() {
   // Start the Node.js server
   const serverPath = path.join(__dirname, 'server.js');
+  console.log('[Main] Starting server with AGENTVAULT_DATA_DIR:', userDataPath);
   
   serverProcess = spawn(process.execPath, [serverPath], {
     env: {
@@ -105,6 +108,8 @@ function startServer() {
     },
     stdio: 'pipe'
   });
+  
+  console.log('[Main] Server process spawned with pid:', serverProcess.pid);
 
   serverProcess.stdout.on('data', (data) => {
     console.log('[Server]', data.toString().trim());
