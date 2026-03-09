@@ -517,6 +517,14 @@ function startReceiver() {
     }
   });
   
+  receiverServer.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error('[AgentVault] Port 8765 already in use. Another instance may be running.');
+    } else {
+      console.error('[AgentVault] Receiver error:', err.message);
+    }
+  });
+  
   receiverServer.listen(8765, () => {
     console.log('[AgentVault] Receiver listening on port 8765');
   });
