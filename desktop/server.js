@@ -1133,7 +1133,15 @@ app.post('/api/config', async (req, res) => {
 
 
 // Start server
-initDB();
+try {
+  console.log('[AgentVault] Starting database initialization...');
+  initDB();
+  console.log('[AgentVault] Database initialization completed');
+} catch (e) {
+  console.error('[AgentVault] Fatal error during database init:', e.message);
+  console.error(e.stack);
+  process.exit(1);
+}
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log('');
