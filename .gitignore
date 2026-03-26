@@ -22,8 +22,15 @@ Thumbs.db
 
 # Tokens
 .ws-token
+
+# Releases & archives
 *.dmg
 *.zip
+
+# Desktop build artifacts
 desktop/dist/
-*.dmg
-*.zip
+desktop/build/icon.icns
+desktop/build/icon.iconset/
+desktop/build/icon-*.png
+desktop/build/icon-1024.png
+*.new
