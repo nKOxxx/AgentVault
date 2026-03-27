@@ -1,8 +1,8 @@
 #!/bin/bash
-# Run AgentVault Desktop in dev mode
+# Run IronVault Desktop in dev mode
 
 echo "========================================"
-echo "AgentVault Desktop (Dev Mode)"
+echo "IronVault Desktop (Dev Mode)"
 echo "========================================"
 echo ""
 
@@ -18,7 +18,7 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-echo "Starting AgentVault Desktop..."
+echo "Starting IronVault Desktop..."
 echo ""
 echo "This will:"
 echo "  1. Start the backend server"

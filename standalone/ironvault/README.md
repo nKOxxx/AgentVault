@@ -1,4 +1,4 @@
-# AgentVault
+# IronVault
 
 Secure credential management for AI agents.
 

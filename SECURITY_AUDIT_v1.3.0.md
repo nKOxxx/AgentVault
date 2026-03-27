@@ -1,4 +1,4 @@
-# Security Audit Report - AgentVault Desktop v1.3.0
+# Security Audit Report - IronVault Desktop v1.3.0
 
 **Audit Date:** 2026-02-27  
 **Auditor:** Automated security scan  
@@ -11,7 +11,7 @@
 
 **Status:** ✅ **PASS**
 
-AgentVault Desktop v1.3.0 implements strong encryption (AES-256-GCM) and follows Electron security best practices. All recommendations from initial audit have been implemented.
+IronVault Desktop v1.3.0 implements strong encryption (AES-256-GCM) and follows Electron security best practices. All recommendations from initial audit have been implemented.
 
 **Overall Score:** 9.5/10
 
@@ -146,7 +146,7 @@ AgentVault Desktop v1.3.0 implements strong encryption (AES-256-GCM) and follows
 
 ## Conclusion
 
-**AgentVault Desktop v1.3.0 is SECURE for production use.**
+**IronVault Desktop v1.3.0 is SECURE for production use.**
 
 All security recommendations have been implemented:
 - ✅ Core encryption is industry-standard

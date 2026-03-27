@@ -1,4 +1,4 @@
-# AgentVault — Three Distribution Versions
+# IronVault — Three Distribution Versions
 
 ## 1. Desktop App (Recommended for Users) 🏆
 
@@ -28,7 +28,7 @@ cd desktop
 
 ## 2. Standalone Web (For Developers) 🔧
 
-**Location:** `standalone/agentvault/`
+**Location:** `standalone/ironvault/`
 
 **What it is:** Portable web server
 
@@ -36,7 +36,7 @@ cd desktop
 
 **Features:**
 - ✅ Works from any directory
-- ✅ Not tied to .agentvault
+- ✅ Not tied to .ironvault
 - ✅ No browser auto-open
 - ✅ Clean, minimal dependencies
 
@@ -44,7 +44,7 @@ cd desktop
 
 **Quick start:**
 ```bash
-cd standalone/agentvault
+cd standalone/ironvault
 ./install.sh
 node server.js
 # Open http://localhost:8765 manually
@@ -70,8 +70,8 @@ node server.js
 
 **Quick start:**
 ```bash
-git clone https://github.com/nKOxxx/AgentVault.git
-cd AgentVault
+git clone https://github.com/nKOxxx/IronVault.git
+cd IronVault
 npm install
 node server.js
 ```

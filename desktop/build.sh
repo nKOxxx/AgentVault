@@ -1,8 +1,8 @@
 #!/bin/bash
-# Build AgentVault Desktop App
+# Build IronVault Desktop App
 
 echo "========================================"
-echo "AgentVault Desktop Builder"
+echo "IronVault Desktop Builder"
 echo "========================================"
 echo ""
 

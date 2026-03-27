@@ -1,5 +1,5 @@
 {
-  "name": "AgentVault",
+  "name": "IronVault",
   "version": "1.4.0",
   "description": "Secure credential management for AI agents",
   "main": "main-simple.js",
@@ -12,8 +12,8 @@
     "build:signed": "CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac"
   },
   "build": {
-    "appId": "com.agentvault.app",
-    "productName": "AgentVault",
+    "appId": "com.ironvault.app",
+    "productName": "IronVault",
     "directories": {
       "output": "dist"
     },
@@ -22,7 +22,7 @@
       "preload.js",
       "public/**/*",
       "entitlements.mac.plist",
-      "agentvault-receiver.js"
+      "ironvault-receiver.js"
     ],
     "mac": {
       "category": "public.app-category.productivity",
@@ -41,7 +41,7 @@
     "fileAssociations": [
       {
         "ext": "vault",
-        "name": "AgentVault Database",
+        "name": "IronVault Database",
         "icon": "build/icon.icns"
       }
     ]

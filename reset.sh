@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🗑️  AgentVault Reset Tool"
+echo "🗑️  IronVault Reset Tool"
 echo "========================="
 echo ""
 echo "This will delete ALL vault data including:"
@@ -32,7 +32,7 @@ for f in vault.db .ws-token audit.log; do
 done
 
 echo ""
-echo "✅ AgentVault has been reset to factory defaults!"
+echo "✅ IronVault has been reset to factory defaults!"
 echo ""
 echo "Start the server again with: node server.js"
 echo "Then visit: http://localhost:8765"

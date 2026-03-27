@@ -9,8 +9,8 @@ let tray = null;
 let serverProcess = null;
 
 // Get app data directory for storing vault
-console.log('[AgentVault] BEFORE app.ready - app.name:', app.name);
-console.log('[AgentVault] BEFORE app.ready - app.getPath(userData):', app.getPath('userData'));
+console.log('[IronVault] BEFORE app.ready - app.name:', app.name);
+console.log('[IronVault] BEFORE app.ready - app.getPath(userData):', app.getPath('userData'));
 const userDataPath = app.getPath('userData');
 let vaultPath = path.join(userDataPath, 'vault.json');
 const configPath = path.join(userDataPath, 'config.json');
@@ -50,14 +50,14 @@ let vaultPassword = null;
 let vaultData = { initialized: false, keys: [] };
 
 // Check if vault file exists on startup
-console.log('[AgentVault] Checking for vault at:', vaultPath);
-console.log('[AgentVault] userDataPath is:', userDataPath);
-console.log('[AgentVault] File exists check:', fs.existsSync(vaultPath));
+console.log('[IronVault] Checking for vault at:', vaultPath);
+console.log('[IronVault] userDataPath is:', userDataPath);
+console.log('[IronVault] File exists check:', fs.existsSync(vaultPath));
 if (fs.existsSync(vaultPath)) {
   vaultData.initialized = true;
-  console.log('[AgentVault] Existing vault found at:', vaultPath);
+  console.log('[IronVault] Existing vault found at:', vaultPath);
 } else {
-  console.log('[AgentVault] No existing vault found at:', vaultPath);
+  console.log('[IronVault] No existing vault found at:', vaultPath);
 }
 
 // Security: Auto-lock after inactivity
@@ -183,11 +183,11 @@ function createTray() {
   }
   
   tray = new Tray(trayIcon);
-  tray.setToolTip('AgentVault');
+  tray.setToolTip('IronVault');
   
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Open AgentVault',
+      label: 'Open IronVault',
       click: () => {
         if (mainWindow) {
           mainWindow.show();
@@ -226,7 +226,7 @@ function createTray() {
 ipcMain.handle('vault-status', () => {
   // Check if vault file exists on disk (even if not loaded in memory)
   const vaultExists = fs.existsSync(vaultPath);
-  console.log('[AgentVault] vault-status called:');
+  console.log('[IronVault] vault-status called:');
   console.log('  vaultPath:', vaultPath);
   console.log('  vaultExists:', vaultExists);
   console.log('  vaultData.initialized:', vaultData.initialized);
@@ -240,14 +240,14 @@ ipcMain.handle('vault-status', () => {
 
 ipcMain.handle('vault-init', (event, { password }) => {
   try {
-    console.log('[AgentVault] vault-init called, saving to:', vaultPath);
+    console.log('[IronVault] vault-init called, saving to:', vaultPath);
     vaultData = { initialized: true, keys: [] };
     saveVault(vaultData, password);
     vaultPassword = password;
-    console.log('[AgentVault] vault saved successfully');
+    console.log('[IronVault] vault saved successfully');
     return { success: true };
   } catch (e) {
-    console.error('[AgentVault] vault-init failed:', e.message);
+    console.error('[IronVault] vault-init failed:', e.message);
     return { error: e.message };
   }
 });
@@ -414,11 +414,11 @@ function checkUnlockRate(ip) {
   return true;
 }
 
-// Start AgentVault credential receiver (embedded HTTP server)
+// Start IronVault credential receiver (embedded HTTP server)
 let receiverServer = null;
 
 function startReceiver() {
-  const RECEIVED_DIR = path.join(app.getPath('userData'), 'agentvault-received');
+  const RECEIVED_DIR = path.join(app.getPath('userData'), 'ironvault-received');
   if (!fs.existsSync(RECEIVED_DIR)) {
     fs.mkdirSync(RECEIVED_DIR, { recursive: true });
   }
@@ -522,7 +522,7 @@ function startReceiver() {
           // Encrypt sensitive value before writing to disk
           const credentialData = {
             received_at: new Date().toISOString(),
-            from: 'AgentVault',
+            from: 'IronVault',
             acknowledged: false,
             credential: {
               id: data.id,
@@ -547,11 +547,11 @@ function startReceiver() {
             vaultData.keys = vaultData.keys || [];
             vaultData.keys.push(newKey);
             saveVault(vaultData, vaultPassword);
-            console.log('[AgentVault] Received and stored credential:', data.name);
+            console.log('[IronVault] Received and stored credential:', data.name);
           } else {
             // Vault locked — write metadata only, no secret value
             fs.writeFileSync(filepath, JSON.stringify(credentialData, null, 2), { mode: 0o600 });
-            console.log('[AgentVault] Received credential metadata (vault locked):', data.name);
+            console.log('[IronVault] Received credential metadata (vault locked):', data.name);
           }
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -569,14 +569,14 @@ function startReceiver() {
   
   receiverServer.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.error('[AgentVault] Port 8765 already in use. Another instance may be running.');
+      console.error('[IronVault] Port 8765 already in use. Another instance may be running.');
     } else {
-      console.error('[AgentVault] Receiver error:', err.message);
+      console.error('[IronVault] Receiver error:', err.message);
     }
   });
   
   receiverServer.listen(8765, () => {
-    console.log('[AgentVault] Receiver listening on port 8765');
+    console.log('[IronVault] Receiver listening on port 8765');
   });
 }
 
@@ -594,19 +594,19 @@ app.whenReady().then(() => {
   // Re-check vault path after app is ready (path might be different)
   const readyUserDataPath = app.getPath('userData');
   const readyVaultPath = path.join(readyUserDataPath, 'vault.json');
-  console.log('[AgentVault] App ready - userDataPath:', readyUserDataPath);
-  console.log('[AgentVault] App ready - vaultPath:', readyVaultPath);
-  console.log('[AgentVault] App ready - vault exists:', fs.existsSync(readyVaultPath));
+  console.log('[IronVault] App ready - userDataPath:', readyUserDataPath);
+  console.log('[IronVault] App ready - vaultPath:', readyVaultPath);
+  console.log('[IronVault] App ready - vault exists:', fs.existsSync(readyVaultPath));
   
   if (fs.existsSync(readyVaultPath)) {
     vaultData.initialized = true;
     vaultPath = readyVaultPath; // Update the global path
-    console.log('[AgentVault] Vault detected after app ready - SET initialized = true');
+    console.log('[IronVault] Vault detected after app ready - SET initialized = true');
   } else {
-    console.log('[AgentVault] No vault found at readyVaultPath');
+    console.log('[IronVault] No vault found at readyVaultPath');
   }
   
-  console.log('[AgentVault] Final vaultData.initialized:', vaultData.initialized);
+  console.log('[IronVault] Final vaultData.initialized:', vaultData.initialized);
   
   createWindow();
   createTray();
@@ -631,7 +631,7 @@ if (!fs.existsSync(userDataPath)) {
   fs.mkdirSync(userDataPath, { recursive: true });
 }
 
-// === REAL SHARING TO AGENTVAULT ===
+// === REAL SHARING TO IRONVAULT ===
 // Directly register the real handler (overwrites the dummy one)
 
 ipcMain.handle('keys-share', async (event, { id, agentId }) => {

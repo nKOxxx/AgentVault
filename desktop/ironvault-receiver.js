@@ -1,15 +1,15 @@
 /**
- * AgentVault Credential Receiver
+ * IronVault Credential Receiver
  * 
- * External Agent endpoint for receiving shared credentials from AgentVault
+ * External Agent endpoint for receiving shared credentials from IronVault
  */
 
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 8765; // AgentVault port
-const RECEIVED_DIR = path.join(require('os').homedir(), '.agentvault', 'agentvault-received');
+const PORT = 8765; // IronVault port
+const RECEIVED_DIR = path.join(require('os').homedir(), '.ironvault', 'ironvault-received');
 
 // Ensure directory exists
 if (!fs.existsSync(RECEIVED_DIR)) {
@@ -17,7 +17,7 @@ if (!fs.existsSync(RECEIVED_DIR)) {
 }
 
 const server = http.createServer((req, res) => {
-  // Enable CORS for AgentVault
+  // Enable CORS for IronVault
   res.setHeader('Access-Control-Allow-Origin', 'http://localhost');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -49,7 +49,7 @@ const server = http.createServer((req, res) => {
         // Store metadata only — never write secret values as plaintext to disk
         const credentialData = {
           received_at: new Date().toISOString(),
-          from: 'AgentVault',
+          from: 'IronVault',
           acknowledged: false,
           credential: {
             id: data.id,
@@ -63,7 +63,7 @@ const server = http.createServer((req, res) => {
         
         fs.writeFileSync(filepath, JSON.stringify(credentialData, null, 2), { mode: 0o600 });
         
-        console.log('[AgentVault] Received credential:', data.name);
+        console.log('[IronVault] Received credential:', data.name);
         
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
@@ -73,7 +73,7 @@ const server = http.createServer((req, res) => {
         }));
         
       } catch (err) {
-        console.error('[AgentVault] Error receiving credential:', err);
+        console.error('[IronVault] Error receiving credential:', err);
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Failed to process credential' }));
       }
@@ -85,15 +85,15 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`[AgentVault] Receiver listening on port ${PORT}`);
-  console.log(`[AgentVault] Credentials will be saved to: ${RECEIVED_DIR}`);
+  console.log(`[IronVault] Receiver listening on port ${PORT}`);
+  console.log(`[IronVault] Credentials will be saved to: ${RECEIVED_DIR}`);
 });
 
 // Also check for existing credentials periodically
 setInterval(() => {
   const files = fs.readdirSync(RECEIVED_DIR).filter(f => f.endsWith('.json'));
   if (files.length > 0) {
-    console.log(`[AgentVault] ${files.length} unacknowledged credentials`);
+    console.log(`[IronVault] ${files.length} unacknowledged credentials`);
   }
 }, 30000); // Check every 30 seconds
 

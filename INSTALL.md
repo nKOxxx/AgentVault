@@ -1,10 +1,10 @@
-# AgentVault Local Installation
+# IronVault Local Installation
 
 ## Quick Install (macOS/Linux)
 
 ```bash
 # 1. Clone/navigate to project
-cd AgentVault
+cd IronVault
 
 # 2. Install dependencies
 npm install
@@ -27,10 +27,10 @@ open http://localhost:8765
 Add to `~/.zshrc` or `~/.bash_profile`:
 
 ```bash
-# Start AgentVault on login
-if ! pgrep -f "AgentVault/server.js" > /dev/null; then
-  cd AgentVault
-  node server.js > /tmp/agentvault.log 2>&1 &
+# Start IronVault on login
+if ! pgrep -f "IronVault/server.js" > /dev/null; then
+  cd IronVault
+  node server.js > /tmp/ironvault.log 2>&1 &
 fi
 ```
 

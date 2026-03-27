@@ -1,8 +1,8 @@
 #!/bin/bash
-# AgentVault Installer
+# IronVault Installer
 
 echo "=========================================="
-echo "AgentVault Installer"
+echo "IronVault Installer"
 echo "=========================================="
 echo ""
 
@@ -28,7 +28,7 @@ npm install
 if [ $? -eq 0 ]; then
     echo "✅ Installation complete"
     echo ""
-    echo "To start AgentVault:"
+    echo "To start IronVault:"
     echo "  node server.js"
     echo ""
     echo "Then open: http://localhost:8765"

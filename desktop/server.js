@@ -23,7 +23,7 @@ const WS_PORT = process.env.WS_PORT || 8766;
 // Trust proxy headers when behind reverse proxy (nginx, traefik, etc.)
 if (process.env.TRUST_PROXY === 'true') {
   app.set('trust proxy', true);
-  console.log('[AgentVault] Trusting proxy headers (X-Forwarded-For, etc.)');
+  console.log('[IronVault] Trusting proxy headers (X-Forwarded-For, etc.)');
 }
 
 // Security: Force HTTPS redirect in production
@@ -39,7 +39,7 @@ app.use((req, res, next) => {
 // ============================================
 
 // Generate or load WebSocket auth token
-const WS_TOKEN_PATH = process.env.AGENTVAULT_DATA_DIR ? path.join(process.env.AGENTVAULT_DATA_DIR, '.ws-token') : path.join(__dirname, '.ws-token');
+const WS_TOKEN_PATH = process.env.IRONVAULT_DATA_DIR ? path.join(process.env.IRONVAULT_DATA_DIR, '.ws-token') : path.join(__dirname, '.ws-token');
 let WS_AUTH_TOKEN;
 
 function generateOrLoadWsToken() {
@@ -48,7 +48,7 @@ function generateOrLoadWsToken() {
   } else {
     WS_AUTH_TOKEN = crypto.randomBytes(32).toString('hex');
     fs.writeFileSync(WS_TOKEN_PATH, WS_AUTH_TOKEN, { mode: 0o600 });
-    console.log('[AgentVault] Generated new WebSocket auth token');
+    console.log('[IronVault] Generated new WebSocket auth token');
   }
   return WS_AUTH_TOKEN;
 }
@@ -130,16 +130,16 @@ function rateLimitMiddleware(req, res, next) {
 
 // Database setup - Use OS-specific app data directory
 const os = require('os');
-const APP_DATA_DIR = process.env.AGENTVAULT_DATA_DIR || 
-  (process.platform === 'darwin' ? path.join(os.homedir(), 'Library/Application Support/AgentVault') :
-   process.platform === 'win32' ? path.join(os.homedir(), 'AppData/Roaming/AgentVault') :
-   path.join(os.homedir(), '.config/AgentVault'));
+const APP_DATA_DIR = process.env.IRONVAULT_DATA_DIR || 
+  (process.platform === 'darwin' ? path.join(os.homedir(), 'Library/Application Support/IronVault') :
+   process.platform === 'win32' ? path.join(os.homedir(), 'AppData/Roaming/IronVault') :
+   path.join(os.homedir(), '.config/IronVault'));
 
 const DB_PATH = path.join(APP_DATA_DIR, 'vault.db');
 const AUDIT_LOG_PATH = path.join(APP_DATA_DIR, 'audit.log');
 
-console.log('[AgentVault] App data directory:', APP_DATA_DIR);
-console.log('[AgentVault] Database path:', DB_PATH);
+console.log('[IronVault] App data directory:', APP_DATA_DIR);
+console.log('[IronVault] Database path:', DB_PATH);
 let db;
 let encryptionKey = null;
 let maxKeys = 20;
@@ -219,30 +219,30 @@ function getAuditLog(limit = 100) {
 // Initialize database
 function initDB() {
   // Debug: Log environment and paths
-  console.log('[AgentVault] AGENTVAULT_DATA_DIR:', process.env.AGENTVAULT_DATA_DIR);
-  console.log('[AgentVault] __dirname:', __dirname);
-  console.log('[AgentVault] DB_PATH:', DB_PATH);
+  console.log('[IronVault] IRONVAULT_DATA_DIR:', process.env.IRONVAULT_DATA_DIR);
+  console.log('[IronVault] __dirname:', __dirname);
+  console.log('[IronVault] DB_PATH:', DB_PATH);
   
   // Ensure directory exists
   const dbDir = path.dirname(DB_PATH);
-  console.log('[AgentVault] Database directory:', dbDir);
-  console.log('[AgentVault] Directory exists:', fs.existsSync(dbDir));
+  console.log('[IronVault] Database directory:', dbDir);
+  console.log('[IronVault] Directory exists:', fs.existsSync(dbDir));
   
   if (!fs.existsSync(dbDir)) {
     try {
       fs.mkdirSync(dbDir, { recursive: true });
-      console.log('[AgentVault] Created database directory:', dbDir);
+      console.log('[IronVault] Created database directory:', dbDir);
     } catch (e) {
-      console.error('[AgentVault] Failed to create directory:', e.message);
+      console.error('[IronVault] Failed to create directory:', e.message);
     }
   }
   
-  console.log('[AgentVault] Opening database at:', DB_PATH);
+  console.log('[IronVault] Opening database at:', DB_PATH);
   db = new sqlite3.Database(DB_PATH, (err) => {
     if (err) {
-      console.error('[AgentVault] Database open error:', err.message);
+      console.error('[IronVault] Database open error:', err.message);
     } else {
-      console.log('[AgentVault] Database opened successfully');
+      console.log('[IronVault] Database opened successfully');
     }
   });
   db.serialize(() => {
@@ -366,7 +366,7 @@ function initializeVault(password) {
       if (err) reject(err);
       db.run("INSERT OR REPLACE INTO vault_meta (key, value) VALUES (?, ?)", ['initialized', 'true'], (err) => {
         if (err) reject(err);
-        const verifyToken = encrypt('agentvault-verify', key);
+        const verifyToken = encrypt('ironvault-verify', key);
         db.run("INSERT OR REPLACE INTO vault_meta (key, value) VALUES (?, ?)", ['verify_token', verifyToken], (err) => {
           if (err) reject(err);
           encryptionKey = key;
@@ -392,7 +392,7 @@ function unlockVault(password) {
         if (verifyRow) {
           try {
             const result = decrypt(verifyRow.value, key);
-            if (result !== 'agentvault-verify') return reject(new Error('Invalid password'));
+            if (result !== 'ironvault-verify') return reject(new Error('Invalid password'));
           } catch (e) {
             return reject(new Error('Invalid password'));
           }
@@ -1117,18 +1117,18 @@ app.post('/api/config', async (req, res) => {
 
 // Start server
 try {
-  console.log('[AgentVault] Starting database initialization...');
+  console.log('[IronVault] Starting database initialization...');
   initDB();
-  console.log('[AgentVault] Database initialization completed');
+  console.log('[IronVault] Database initialization completed');
 } catch (e) {
-  console.error('[AgentVault] Fatal error during database init:', e.message);
+  console.error('[IronVault] Fatal error during database init:', e.message);
   console.error(e.stack);
   process.exit(1);
 }
 
 app.listen(PORT, '127.0.0.1', () => {
   console.log('');
-  console.log('🔐 AgentVault is running!');
+  console.log('🔐 IronVault is running!');
   console.log('');
   console.log(`   Web interface: http://localhost:${PORT}`);
   console.log(`   Also accessible: http://127.0.0.1:${PORT}`);

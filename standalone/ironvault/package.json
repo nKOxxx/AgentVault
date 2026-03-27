@@ -1,5 +1,5 @@
 {
-  "name": "agentvault",
+  "name": "ironvault",
   "version": "1.4.0",
   "description": "Secure credential management for AI agents",
   "main": "server.js",

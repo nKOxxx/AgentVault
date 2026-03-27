@@ -1,7 +1,7 @@
-# AgentVault
+# IronVault
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey)](https://github.com/nKOxxx/AgentVault/releases)
+[![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey)](https://github.com/nKOxxx/IronVault/releases)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
 
 Secure encrypted credential vault for AI agents. Store API keys and secrets locally with AES-256-GCM encryption, audit logging, and WebSocket integration for seamless agent access.
@@ -12,17 +12,17 @@ No terminal required — native menubar app.
 
 | Intel | Apple Silicon (M1/M2/M3) |
 |-------|--------------------------|
-| [AgentVault-1.4.0.dmg](https://github.com/nKOxxx/AgentVault/releases/latest) | [AgentVault-1.4.0-arm64.dmg](https://github.com/nKOxxx/AgentVault/releases/latest) |
+| [IronVault-1.4.0.dmg](https://github.com/nKOxxx/IronVault/releases/latest) | [IronVault-1.4.0-arm64.dmg](https://github.com/nKOxxx/IronVault/releases/latest) |
 
 > **First launch:** macOS may warn about an unsigned app. Right-click → Open, or go to System Settings → Privacy & Security → "Open Anyway".
 
-[All releases](https://github.com/nKOxxx/AgentVault/releases) · [Security Audit v1.3.0](SECURITY_AUDIT_v1.3.0.md) (Score: 9.5/10)
+[All releases](https://github.com/nKOxxx/IronVault/releases) · [Security Audit v1.3.0](SECURITY_AUDIT_v1.3.0.md) (Score: 9.5/10)
 
 ## Quick Start (Server)
 
 ```bash
-git clone https://github.com/nKOxxx/AgentVault.git
-cd AgentVault
+git clone https://github.com/nKOxxx/IronVault.git
+cd IronVault
 npm install
 npm start
 ```
@@ -41,7 +41,7 @@ Open http://localhost:8765, create a master password, and add your first key.
 ## Architecture
 
 ```
-AgentVault (localhost:8765) ◄──WebSocket──► External Agent
+IronVault (localhost:8765) ◄──WebSocket──► External Agent
         │
     vault.db     ← SQLite (AES-256-GCM encrypted values)
     audit.log    ← Security audit trail
@@ -67,9 +67,9 @@ All endpoints require vault to be unlocked (except `/api/init` and `/api/unlock`
 
 ### WebSocket Protocol
 
-AgentVault connects to agent on port `8766`.
+IronVault connects to agent on port `8766`.
 
-**AgentVault → External Agent:**
+**IronVault → External Agent:**
 ```json
 {
   "type": "shared_secret",
@@ -79,7 +79,7 @@ AgentVault connects to agent on port `8766`.
 }
 ```
 
-**External Agent → AgentVault (confirmation):**
+**External Agent → IronVault (confirmation):**
 ```json
 {
   "type": "key_received",
@@ -99,7 +99,7 @@ AgentVault connects to agent on port `8766`.
 | Rate limiting | 5 unlock attempts per 15 minutes |
 | Scope | Localhost only, no cloud services |
 
-> **Important:** AgentVault stores all data locally in `vault.db`. If this file is lost or your master password is forgotten, keys are unrecoverable — there is no cloud backup or password reset. Back up `vault.db` regularly.
+> **Important:** IronVault stores all data locally in `vault.db`. If this file is lost or your master password is forgotten, keys are unrecoverable — there is no cloud backup or password reset. Back up `vault.db` regularly.
 
 ## Configuration
 

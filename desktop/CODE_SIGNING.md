@@ -1,8 +1,8 @@
-# Code Signing Guide for AgentVault
+# Code Signing Guide for IronVault
 
 ## macOS Code Signing
 
-To distribute AgentVault without macOS security warnings, you need to code sign the app with an Apple Developer ID.
+To distribute IronVault without macOS security warnings, you need to code sign the app with an Apple Developer ID.
 
 ## Prerequisites
 
@@ -75,20 +75,20 @@ For local testing without Apple Developer account:
 openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes
 
 # Sign the app (manual, not for distribution)
-codesign --force --deep --sign - /path/to/AgentVault.app
+codesign --force --deep --sign - /path/to/IronVault.app
 ```
 
 ⚠️ **Self-signed apps still show security warnings on other Macs.**
 
 ## Current Status
 
-**AgentVault v1.3.0 is NOT code signed.**
+**IronVault v1.3.0 is NOT code signed.**
 
 Users will see:
-> "AgentVault cannot be opened because the developer cannot be verified"
+> "IronVault cannot be opened because the developer cannot be verified"
 
 **Workaround for users:**
-1. Right-click AgentVault → Open
+1. Right-click IronVault → Open
 2. Click "Open" in dialog
 3. Or: System Settings → Privacy & Security → "Open Anyway"
 

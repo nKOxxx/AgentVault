@@ -9,9 +9,9 @@ let serverProcess = null;
 
 // Get app data directory for storing vault
 const userDataPath = app.getPath('userData');
-process.env.AGENTVAULT_DATA_DIR = userDataPath;
+process.env.IRONVAULT_DATA_DIR = userDataPath;
 console.log('[Main] userDataPath:', userDataPath);
-console.log('[Main] AGENTVAULT_DATA_DIR:', process.env.AGENTVAULT_DATA_DIR);
+console.log('[Main] IRONVAULT_DATA_DIR:', process.env.IRONVAULT_DATA_DIR);
 
 function createWindow() {
   // Create the browser window
@@ -57,11 +57,11 @@ function createTray() {
   const trayIcon = nativeImage.createFromNamedImage('NSStatusItem', [16, 16]);
   
   tray = new Tray(trayIcon);
-  tray.setToolTip('AgentVault');
+  tray.setToolTip('IronVault');
   
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Open AgentVault',
+      label: 'Open IronVault',
       click: () => {
         if (mainWindow) {
           mainWindow.show();
@@ -99,12 +99,12 @@ function createTray() {
 function startServer() {
   // Start the Node.js server
   const serverPath = path.join(__dirname, 'server.js');
-  console.log('[Main] Starting server with AGENTVAULT_DATA_DIR:', userDataPath);
+  console.log('[Main] Starting server with IRONVAULT_DATA_DIR:', userDataPath);
   
   serverProcess = spawn(process.execPath, [serverPath], {
     env: {
       ...process.env,
-      AGENTVAULT_DATA_DIR: userDataPath
+      IRONVAULT_DATA_DIR: userDataPath
     },
     stdio: 'pipe'
   });

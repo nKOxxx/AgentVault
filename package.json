@@ -1,15 +1,19 @@
 {
-  "name": "agentvault",
+  "name": "ironvault",
   "version": "1.4.0",
   "description": "Secure encrypted credential vault for AI agents with AES-256-GCM encryption, audit logging, and WebSocket integration",
   "main": "server.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nKOxxx/AgentVault.git"
+    "url": "https://github.com/nKOxxx/IronVault.git"
   },
-  "homepage": "https://github.com/nKOxxx/AgentVault#readme",
+  "homepage": "https://github.com/nKOxxx/IronVault#readme",
+  "bin": {
+    "ironvault": "./cli.js"
+  },
   "scripts": {
     "start": "node server.js",
+    "cli": "node cli.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

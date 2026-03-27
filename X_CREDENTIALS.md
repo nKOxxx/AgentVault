@@ -1,4 +1,4 @@
-# AgentVault X/Twitter Credentials Format
+# IronVault X/Twitter Credentials Format
 
 ## Supported X API Credential Types
 
@@ -26,7 +26,7 @@ For full automation (post + reply + like + follow):
 
 ## Adding Credentials
 
-1. Open AgentVault at http://localhost:8765
+1. Open IronVault at http://localhost:8765
 2. Unlock vault
 3. Click "+ Add New Key"
 4. Select "X (Twitter)" from Social Media category

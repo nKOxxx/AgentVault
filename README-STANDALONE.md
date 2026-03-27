@@ -1,4 +1,4 @@
-# AgentVault - Standalone Local Version
+# IronVault - Standalone Local Version
 
 Secure credential management for AI agents. Runs locally on your machine.
 
@@ -6,8 +6,8 @@ Secure credential management for AI agents. Runs locally on your machine.
 
 ```bash
 # Install
-git clone https://github.com/nKOxxx/AgentVault.git
-cd AgentVault
+git clone https://github.com/nKOxxx/IronVault.git
+cd IronVault
 npm install
 
 # Run

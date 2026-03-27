@@ -24,7 +24,7 @@ const WS_PORT = process.env.WS_PORT || 8766;
 // Trust proxy headers when behind reverse proxy (nginx, traefik, etc.)
 if (process.env.TRUST_PROXY === 'true') {
   app.set('trust proxy', true);
-  console.log('[AgentVault] Trusting proxy headers (X-Forwarded-For, etc.)');
+  console.log('[IronVault] Trusting proxy headers (X-Forwarded-For, etc.)');
 }
 
 // Security: Force HTTPS redirect in production
@@ -49,7 +49,7 @@ function generateOrLoadWsToken() {
   } else {
     WS_AUTH_TOKEN = crypto.randomBytes(32).toString('hex');
     fs.writeFileSync(WS_TOKEN_PATH, WS_AUTH_TOKEN, { mode: 0o600 });
-    console.log('[AgentVault] Generated new WebSocket auth token');
+    console.log('[IronVault] Generated new WebSocket auth token');
   }
   return WS_AUTH_TOKEN;
 }
@@ -333,7 +333,7 @@ function initializeVault(password) {
       db.run("INSERT OR REPLACE INTO vault_meta (key, value) VALUES (?, ?)", ['initialized', 'true'], (err) => {
         if (err) reject(err);
         // Store password verification hash
-        const verifyToken = encrypt('agentvault-verify', key);
+        const verifyToken = encrypt('ironvault-verify', key);
         db.run("INSERT OR REPLACE INTO vault_meta (key, value) VALUES (?, ?)", ['verify_token', verifyToken], (err) => {
           if (err) reject(err);
           encryptionKey = key;
@@ -360,7 +360,7 @@ function unlockVault(password) {
         if (verifyRow) {
           try {
             const result = decrypt(verifyRow.value, key);
-            if (result !== 'agentvault-verify') {
+            if (result !== 'ironvault-verify') {
               return reject(new Error('Invalid password'));
             }
           } catch (e) {
@@ -1090,10 +1090,10 @@ let listenerProcess = null;
 function startListener() {
   // Try multiple possible paths for the listener
   const possiblePaths = [
-    path.join(__dirname, '..', '..', '.agent-vault', 'listener.js'),  // From projects/AgentVault/
-    path.join(__dirname, '.agent-vault', 'listener.js'),               // From workspace root
-    path.join(process.cwd(), '.agent-vault', 'listener.js'),           // From current working dir
-    path.join(os.homedir(), '.agentvault', 'listener.js')         // Absolute path
+    path.join(__dirname, '..', '..', '.iron-vault', 'listener.js'),  // From projects/IronVault/
+    path.join(__dirname, '.iron-vault', 'listener.js'),               // From workspace root
+    path.join(process.cwd(), '.iron-vault', 'listener.js'),           // From current working dir
+    path.join(os.homedir(), '.ironvault', 'listener.js')         // Absolute path
   ];
   
   let listenerPath = null;
@@ -1105,14 +1105,14 @@ function startListener() {
   }
   
   if (!listenerPath) {
-    console.log('[AgentVault] Listener not found at expected paths, skipping auto-start');
-    console.log('[AgentVault] Searched:', possiblePaths);
+    console.log('[IronVault] Listener not found at expected paths, skipping auto-start');
+    console.log('[IronVault] Searched:', possiblePaths);
     return;
   }
   
-  console.log('[AgentVault] Found listener at:', listenerPath);
+  console.log('[IronVault] Found listener at:', listenerPath);
 
-  console.log('[AgentVault] Starting agent listener...');
+  console.log('[IronVault] Starting agent listener...');
 
   const { spawn } = require('child_process');
   listenerProcess = spawn('node', [listenerPath], {
@@ -1129,7 +1129,7 @@ function startListener() {
   });
 
   listenerProcess.on('exit', (code) => {
-    console.log(`[AgentVault] Listener exited with code ${code}, restarting in 5s...`);
+    console.log(`[IronVault] Listener exited with code ${code}, restarting in 5s...`);
     setTimeout(startListener, 5000);
   });
 }
@@ -1139,7 +1139,7 @@ initDB();
 
 app.listen(PORT, '127.0.0.1', () => {
   console.log('');
-  console.log('🔐 AgentVault is running!');
+  console.log('🔐 IronVault is running!');
   console.log('');
   console.log(`   Web interface: http://localhost:${PORT}`);
   console.log(`   Also accessible: http://127.0.0.1:${PORT}`);

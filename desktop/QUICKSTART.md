@@ -1,4 +1,4 @@
-# AgentVault Desktop - Quick Start
+# IronVault Desktop - Quick Start
 
 ## Run in Development Mode (No Build Required)
 
@@ -23,9 +23,9 @@ cd desktop
 ```
 
 Output will be in `dist/`:
-- **macOS**: `AgentVault-1.2.0.dmg`
-- **Windows**: `AgentVault Setup 1.2.0.exe`
-- **Linux**: `AgentVault-1.2.0.AppImage`
+- **macOS**: `IronVault-1.2.0.dmg`
+- **Windows**: `IronVault Setup 1.2.0.exe`
+- **Linux**: `IronVault-1.2.0.AppImage`
 
 ## What Users See
 
@@ -38,8 +38,8 @@ Output will be in `dist/`:
 ## Data Storage
 
 Vault data stored in OS-standard location:
-- macOS: `~/Library/Application Support/AgentVault/`
-- Windows: `%APPDATA%\AgentVault\`
-- Linux: `~/.config/AgentVault/`
+- macOS: `~/Library/Application Support/IronVault/`
+- Windows: `%APPDATA%\IronVault\`
+- Linux: `~/.config/IronVault/`
 
 No files in app directory — fully portable.
