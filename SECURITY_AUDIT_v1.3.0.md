@@ -160,6 +160,6 @@ All security recommendations have been implemented:
 
 ---
 
-**Audited By:** Ares Security Scanner  
+**Audited By:** Automated Security Audit  
 **Date:** 2026-02-27  
 **Next Audit:** Recommended before v1.4.0

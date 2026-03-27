@@ -36,7 +36,7 @@ cd desktop
 
 **Features:**
 - ✅ Works from any directory
-- ✅ Not tied to .openclaw
+- ✅ Not tied to .agentvault
 - ✅ No browser auto-open
 - ✅ Clean, minimal dependencies
 
@@ -52,16 +52,16 @@ node server.js
 
 ---
 
-## 3. Full Dev Version (For You) 💻
+## 3. Full Dev Version 💻
 
 **Location:** Root of repo
 
-**What it is:** Development environment
+**What it is:** Development environment with all features
 
-**Install:** Already set up in `~/.openclaw/workspace/`
+**Install:** Clone the repo and run
 
 **Features:**
-- ✅ Auto-starts OpenClaw listener
+- ✅ Auto-starts agent listener
 - ✅ Hot reload during development
 - ✅ Full debugging output
 - ✅ All features enabled
@@ -70,7 +70,9 @@ node server.js
 
 **Quick start:**
 ```bash
-cd ~/.openclaw/workspace/projects/AgentVault
+git clone https://github.com/nKOxxx/AgentVault.git
+cd AgentVault
+npm install
 node server.js
 ```
 

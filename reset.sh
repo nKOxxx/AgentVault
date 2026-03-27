@@ -24,12 +24,12 @@ pkill -f "node server.js" 2>/dev/null
 
 # Delete the database
 cd "$(dirname "$0")"
-if [ -f "vault.db" ]; then
-    rm vault.db
-    echo "✅ Database deleted"
-else
-    echo "ℹ️  No database found (already reset?)"
-fi
+for f in vault.db .ws-token audit.log; do
+    if [ -f "$f" ]; then
+        rm "$f"
+        echo "✅ Deleted $f"
+    fi
+done
 
 echo ""
 echo "✅ AgentVault has been reset to factory defaults!"

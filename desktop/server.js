@@ -67,7 +67,7 @@ app.use(express.static('public'));
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (!origin || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader('Access-Control-Allow-Origin', origin || 'http://localhost');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   }
@@ -566,9 +566,9 @@ function countKeys() {
   });
 }
 
-// WebSocket server for OpenClaw connection
+// WebSocket server for agent connection
 const wss = new WebSocket.Server({ port: WS_PORT });
-let openclawClient = null;
+let agentClient = null;
 let pendingShares = new Map(); // Track pending shares
 
 wss.on('connection', (ws, req) => {
@@ -594,7 +594,7 @@ wss.on('connection', (ws, req) => {
         if (data.token === WS_AUTH_TOKEN) {
           isAuthenticated = true;
           authenticatedClients.add(ws);
-          openclawClient = ws;
+          agentClient = ws;
           ws.send(JSON.stringify({ type: 'auth_success' }));
           console.log('✅ WebSocket client authenticated');
         } else {
@@ -611,9 +611,9 @@ wss.on('connection', (ws, req) => {
         return;
       }
       
-      console.log('Received from OpenClaw:', data.type);
+      console.log('Received from agent:', data.type);
       
-      // Handle requests from OpenClaw (now authenticated)
+      // Handle requests from agent (now authenticated)
       if (data.type === 'get_key') {
         getKeyValue(data.keyId).then(keyData => {
           ws.send(JSON.stringify({
@@ -640,27 +640,27 @@ wss.on('connection', (ws, req) => {
         pendingShares.delete(data.keyId);
       }
     } catch (e) {
-      console.error('Invalid message from OpenClaw:', e);
+      console.error('Invalid message from agent:', e);
     }
   });
   
   ws.on('close', () => {
     console.log('🔌 WebSocket client disconnected');
     authenticatedClients.delete(ws);
-    if (openclawClient === ws) {
-      openclawClient = null;
+    if (agentClient === ws) {
+      agentClient = null;
     }
   });
 });
 
-// Share key to OpenClaw
-async function shareToOpenClaw(keyData, keyId) {
+// Share key to agent
+async function shareToAgent(keyData, keyId) {
   return new Promise((resolve, reject) => {
-    console.log(`[shareToOpenClaw] Starting share for ${keyData.name}, openclawClient: ${openclawClient ? 'connected' : 'NULL'}`);
+    console.log(`[shareToAgent] Starting share for ${keyData.name}, agentClient: ${agentClient ? 'connected' : 'NULL'}`);
     
-    if (!openclawClient) {
-      console.log(`[shareToOpenClaw] REJECTED: No openclawClient`);
-      reject(new Error('OpenClaw Agent not connected. Please wait for connection or refresh the page.'));
+    if (!agentClient) {
+      console.log(`[shareToAgent] REJECTED: No agentClient`);
+      reject(new Error('External Agent not connected. Please wait for connection or refresh the page.'));
       return;
     }
     
@@ -677,9 +677,9 @@ async function shareToOpenClaw(keyData, keyId) {
       data: keyData
     });
     
-    console.log(`[shareToOpenClaw] Sending message to client...`);
-    openclawClient.send(message);
-    console.log(`[shareToOpenClaw] Message sent, waiting for confirmation...`);
+    console.log(`[shareToAgent] Sending message to client...`);
+    agentClient.send(message);
+    console.log(`[shareToAgent] Message sent, waiting for confirmation...`);
     
     // Wait for confirmation with timeout
     const checkInterval = setInterval(() => {
@@ -692,7 +692,7 @@ async function shareToOpenClaw(keyData, keyId) {
         // Timeout after 10 seconds
         clearInterval(checkInterval);
         pendingShares.delete(keyId);
-        reject(new Error('Timeout: OpenClaw Agent did not confirm receipt within 10 seconds'));
+        reject(new Error('Timeout: External Agent did not confirm receipt within 10 seconds'));
       }
     }, 500);
   });
@@ -700,8 +700,8 @@ async function shareToOpenClaw(keyData, keyId) {
 
 // Share all unshared keys
 async function shareAllUnshared() {
-  if (!openclawClient) {
-    throw new Error('OpenClaw Agent not connected');
+  if (!agentClient) {
+    throw new Error('External Agent not connected');
   }
   
   const keys = await getKeys();
@@ -717,7 +717,7 @@ async function shareAllUnshared() {
   for (const key of unsharedKeys) {
     try {
       const keyData = await getKeyValue(key.id);
-      await shareToOpenClaw(keyData, key.id);
+      await shareToAgent(keyData, key.id);
       results.success++;
     } catch (e) {
       results.failed++;
@@ -754,7 +754,7 @@ app.get('/api/status', async (req, res) => {
     const initialized = await isVaultInitialized() || false;
     const unlocked = encryptionKey !== null;
     const keyCount = unlocked ? await countKeys() : 0;
-    const connected = openclawClient !== null && authenticatedClients.has(openclawClient);
+    const connected = agentClient !== null && authenticatedClients.has(agentClient);
     
     res.json({
       initialized,
@@ -762,7 +762,7 @@ app.get('/api/status', async (req, res) => {
       keyCount,
       maxKeys,
       connected,
-      agentName: 'OpenClaw Agent'
+      agentName: 'External Agent'
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -874,10 +874,10 @@ app.post('/api/keys', validateInput(['name', 'service', 'url', 'value']), async 
     
     // Auto-share if requested and connected
     let shared = false;
-    if (autoShare && openclawClient) {
+    if (autoShare && agentClient) {
       try {
         const keyData = await getKeyValue(id);
-        await shareToOpenClaw(keyData, id);
+        await shareToAgent(keyData, id);
         shared = true;
       } catch (e) {
         console.log('Auto-share failed:', e.message);
@@ -903,17 +903,17 @@ app.post('/api/keys/:id/share', async (req, res) => {
     await updateShareStatus(req.params.id, 'pending');
     
     try {
-      await shareToOpenClaw(keyData, req.params.id);
+      await shareToAgent(keyData, req.params.id);
       
       // Log key sharing
       logAudit('key_shared', {
         keyId: req.params.id,
         keyName: keyData.name,
-        sharedWith: 'OpenClaw Agent',
+        sharedWith: 'External Agent',
         timestamp: new Date().toISOString()
       });
       
-      res.json({ success: true, message: 'Shared with OpenClaw Agent' });
+      res.json({ success: true, message: 'Shared with External Agent' });
     } catch (shareErr) {
       // Set status to error on failure
       await updateShareStatus(req.params.id, 'error');
@@ -937,7 +937,7 @@ app.post('/api/keys/share-all', async (req, res) => {
   }
 });
 
-// Stop sharing a key (revoke from OpenClaw)
+// Stop sharing a key (revoke from agent)
 app.post('/api/keys/:id/unshare', async (req, res) => {
   try {
     if (!encryptionKey) {
@@ -1143,12 +1143,12 @@ try {
   process.exit(1);
 }
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '127.0.0.1', () => {
   console.log('');
   console.log('🔐 AgentVault is running!');
   console.log('');
   console.log(`   Web interface: http://localhost:${PORT}`);
-  console.log(`   Also accessible: http://0.0.0.0:${PORT}`);
+  console.log(`   Also accessible: http://127.0.0.1:${PORT}`);
   console.log(`   WebSocket:     ws://localhost:${WS_PORT}`);
   console.log('');
   console.log('   Open http://localhost:8765 in your browser');

@@ -4,7 +4,7 @@
 
 ```bash
 # 1. Clone/navigate to project
-cd ~/.openclaw/workspace/projects/AgentVault
+cd AgentVault
 
 # 2. Install dependencies
 npm install
@@ -20,7 +20,7 @@ open http://localhost:8765
 
 1. **Create vault** - Enter master password (8+ chars)
 2. **Add credentials** - Click "+ Add Credential"
-3. **Share to agent** - Click 📤 button (if OpenClaw running)
+3. **Share to agent** - Click 📤 button (if the agent running)
 
 ## Auto-Start (Optional)
 
@@ -29,7 +29,7 @@ Add to `~/.zshrc` or `~/.bash_profile`:
 ```bash
 # Start AgentVault on login
 if ! pgrep -f "AgentVault/server.js" > /dev/null; then
-  cd ~/.openclaw/workspace/projects/AgentVault
+  cd AgentVault
   node server.js > /tmp/agentvault.log 2>&1 &
 fi
 ```
@@ -38,7 +38,7 @@ fi
 
 ```bash
 # Daily backup
-cp ~/.openclaw/workspace/projects/AgentVault/vault.db \
+cp vault.db \
    ~/backups/vault-$(date +%Y%m%d).db
 ```
 
@@ -77,5 +77,5 @@ node server.js
 - Delete `vault.db` and start over
 
 **Share not working:**
-- Ensure OpenClaw agent is running
+- Ensure external agent is running
 - Check WebSocket: `ws://localhost:8766`

@@ -15,10 +15,11 @@ case "$1" in
 
     cd "$VAULT_DIR"
 
-    # Start the OpenClaw listener in the background
-    if [ -f "$VAULT_DIR/../.agent-vault/listener.js" ]; then
-      echo "Starting OpenClaw listener..."
-      nohup node "$VAULT_DIR/../.agent-vault/listener.js" > /tmp/agentvault-listener.log 2>&1 &
+    # Start the agent listener in the background (if installed)
+    LISTENER="$HOME/.agentvault/listener.js"
+    if [ -f "$LISTENER" ]; then
+      echo "Starting agent listener..."
+      nohup node "$LISTENER" > /tmp/agentvault-listener.log 2>&1 &
       LISTENER_PID=$!
       echo $LISTENER_PID > /tmp/agentvault-listener.pid
     fi
@@ -31,7 +32,7 @@ case "$1" in
     if curl -s http://localhost:8765/api/status > /dev/null 2>&1; then
       echo "✅ AgentVault running on http://localhost:8765"
       echo "✅ WebSocket on port 8766"
-      echo "✅ OpenClaw listener running"
+      echo "✅ agent listener running"
     else
       echo "⚠️  Starting... check /tmp/agentvault.log"
     fi
@@ -47,11 +48,11 @@ case "$1" in
       echo "AgentVault not running"
     fi
 
-    # Stop OpenClaw listener
+    # Stop agent listener
     if [ -f "/tmp/agentvault-listener.pid" ]; then
       kill $(cat /tmp/agentvault-listener.pid) 2>/dev/null
       rm -f /tmp/agentvault-listener.pid
-      echo "OpenClaw listener stopped"
+      echo "agent listener stopped"
     fi
     ;;
     

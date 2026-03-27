@@ -20,7 +20,7 @@ node server.js
 
 - **Encrypted vault** — AES-256-GCM encryption
 - **Local only** — No cloud, no external dependencies
-- **Share to agent** — Send credentials to OpenClaw agent
+- **Share to agent** — Send credentials to external agent
 - **Status badges** — Visual sharing status (✓ shared, ⏳ pending, ✕ error)
 - **Audit logging** — Track all vault operations
 

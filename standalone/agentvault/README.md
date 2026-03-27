@@ -20,7 +20,7 @@ Then open: http://localhost:8765
 
 1. Create vault password
 2. Add credentials
-3. Share to OpenClaw agent (optional)
+3. Share to external agent (optional)
 
 ## Security
 

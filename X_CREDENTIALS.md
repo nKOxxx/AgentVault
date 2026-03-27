@@ -31,7 +31,7 @@ For full automation (post + reply + like + follow):
 3. Click "+ Add New Key"
 4. Select "X (Twitter)" from Social Media category
 5. Fill in the fields you have (minimum one credential)
-6. Check "Share with Ares immediately"
+6. Check "Auto-share with agent"
 7. Click "Save Key"
 
 All credentials are encrypted and stored locally.

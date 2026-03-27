@@ -624,7 +624,7 @@
         const data = await res.json();
         
         if (data.success) {
-          showToast('Shared to OpenClaw agent', 'success');
+          showToast('Shared to external agent', 'success');
           // Refresh to get updated status
           await loadCredentials();
         } else {

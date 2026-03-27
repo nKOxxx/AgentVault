@@ -1,6 +1,6 @@
 {
   "name": "agentvault",
-  "version": "1.1.0",
+  "version": "1.4.0",
   "description": "Secure encrypted credential vault for AI agents with AES-256-GCM encryption, audit logging, and WebSocket integration",
   "main": "server.js",
   "repository": {
@@ -24,11 +24,9 @@
     "websocket",
     "security"
   ],
-  "author": "",
+  "author": "Nikola Stojanow",
   "license": "MIT",
   "dependencies": {
-    "body-parser": "^2.2.2",
-    "crypto-js": "^4.2.0",
     "express": "^5.2.1",
     "sqlite3": "^5.1.7",
     "ws": "^8.19.0"

@@ -1,7 +1,7 @@
 /**
  * AgentVault Credential Receiver
  * 
- * OpenClaw endpoint for receiving shared credentials from AgentVault
+ * External Agent endpoint for receiving shared credentials from AgentVault
  */
 
 const http = require('http');
@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = 8765; // AgentVault port
-const RECEIVED_DIR = path.join(require('os').homedir(), '.openclaw', 'agentvault-received');
+const RECEIVED_DIR = path.join(require('os').homedir(), '.agentvault', 'agentvault-received');
 
 // Ensure directory exists
 if (!fs.existsSync(RECEIVED_DIR)) {
@@ -18,7 +18,7 @@ if (!fs.existsSync(RECEIVED_DIR)) {
 
 const server = http.createServer((req, res) => {
   // Enable CORS for AgentVault
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
@@ -66,7 +66,7 @@ const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
           success: true, 
-          message: 'Credential received by Ares',
+          message: 'Credential received',
           received_at: credentialData.received_at
         }));
         

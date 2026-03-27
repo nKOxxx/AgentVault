@@ -32,13 +32,13 @@ A secure credential manager for AI agents. Runs as a native desktop app.
 
 1. **First launch** — Create your master password
 2. **Add credentials** — Click "+ Add Credential"
-3. **Share to agent** — Click 📤 (if OpenClaw running)
+3. **Share to agent** — Click 📤 (if the agent running)
 4. **Access anytime** — Click tray icon or use Cmd/Ctrl+Shift+V
 
 ## Features
 
 - 🔐 AES-256-GCM encryption
-- 📤 Share credentials to OpenClaw agent
+- 📤 Share credentials to external agent
 - ✓ Visual share status (green/orange/red badges)
 - 🔔 Menu bar/tray icon
 - 💾 Auto-starts on login (optional)

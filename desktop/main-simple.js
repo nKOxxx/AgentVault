@@ -408,7 +408,7 @@ function startReceiver() {
   }
   
   receiverServer = http.createServer((req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     
@@ -583,7 +583,7 @@ if (!fs.existsSync(userDataPath)) {
   fs.mkdirSync(userDataPath, { recursive: true });
 }
 
-// === REAL SHARING TO OPENCLAW ===
+// === REAL SHARING TO AGENTVAULT ===
 // Directly register the real handler (overwrites the dummy one)
 
 ipcMain.handle('keys-share', async (event, { id, agentId }) => {
@@ -600,7 +600,7 @@ ipcMain.handle('keys-share', async (event, { id, agentId }) => {
   vaultData.keys[keyIndex].share_status = 'pending';
   saveVault(vaultData, vaultPassword);
   
-  // Send to OpenClaw
+  // Send to agent
   try {
     const response = await fetch('http://localhost:8765/receive', {
       method: 'POST',
@@ -618,14 +618,14 @@ ipcMain.handle('keys-share', async (event, { id, agentId }) => {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     
     vaultData.keys[keyIndex].share_status = 'shared';
-    vaultData.keys[keyIndex].shared_with = 'ares';
+    vaultData.keys[keyIndex].shared_with = 'agent';
     vaultData.keys[keyIndex].shared_at = new Date().toISOString();
     saveVault(vaultData, vaultPassword);
     
-    return { success: true, message: 'Credential sent to Ares' };
+    return { success: true, message: 'Credential sent to agent' };
   } catch (err) {
     vaultData.keys[keyIndex].share_status = 'error';
     saveVault(vaultData, vaultPassword);
-    return { error: 'Failed to send. Is OpenClaw running?', details: err.message };
+    return { error: 'Failed to send. Is the agent running?', details: err.message };
   }
 });
