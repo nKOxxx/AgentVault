@@ -83,16 +83,8 @@ function validateInput(fields) {
   return (req, res, next) => {
     for (const field of fields) {
       const value = req.body[field];
-      if (value !== undefined) {
-        // Check for dangerous SQL injection patterns only
-        // Allow common API key characters: - _ . / = + etc.
-        if (typeof value === 'string' && /(\-\-)|(;)|(\/\*)|(\*\/)/.test(value)) {
-          return res.status(400).json({ error: 'Invalid characters in input' });
-        }
-        // Length limits
-        if (typeof value === 'string' && value.length > 2000) {
-          return res.status(400).json({ error: 'Input too long' });
-        }
+      if (value !== undefined && typeof value === 'string' && value.length > 2000) {
+        return res.status(400).json({ error: 'Input too long' });
       }
     }
     next();
@@ -340,8 +332,12 @@ function initializeVault(password) {
       if (err) reject(err);
       db.run("INSERT OR REPLACE INTO vault_meta (key, value) VALUES (?, ?)", ['initialized', 'true'], (err) => {
         if (err) reject(err);
-        encryptionKey = key;
-        resolve(key);
+        const verifyToken = encrypt('agentvault-verify', key);
+        db.run("INSERT OR REPLACE INTO vault_meta (key, value) VALUES (?, ?)", ['verify_token', verifyToken], (err) => {
+          if (err) reject(err);
+          encryptionKey = key;
+          resolve(key);
+        });
       });
     });
   });
@@ -357,14 +353,14 @@ function unlockVault(password) {
       const salt = row.value;
       const key = deriveKey(password, salt);
       
-      // Test decryption
-      db.get("SELECT encrypted_value FROM keys LIMIT 1", (err, testRow) => {
-        if (err) reject(err);
-        if (testRow) {
+      db.get("SELECT value FROM vault_meta WHERE key = 'verify_token'", (err, verifyRow) => {
+        if (err) return reject(err);
+        if (verifyRow) {
           try {
-            decrypt(testRow.encrypted_value, key);
+            const result = decrypt(verifyRow.value, key);
+            if (result !== 'agentvault-verify') return reject(new Error('Invalid password'));
           } catch (e) {
-            reject(new Error('Invalid password'));
+            return reject(new Error('Invalid password'));
           }
         }
         encryptionKey = key;
@@ -730,19 +726,6 @@ app.get('/api/status', async (req, res) => {
       connected,
       agentName: 'External Agent'
     });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Get WebSocket auth token (only when vault is unlocked)
-app.get('/api/ws-token', async (req, res) => {
-  try {
-    // Only provide token if vault is unlocked
-    if (!encryptionKey) {
-      return res.status(401).json({ error: 'Vault locked' });
-    }
-    res.json({ token: WS_AUTH_TOKEN });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

@@ -46,6 +46,7 @@ const server = http.createServer((req, res) => {
         const filename = `credential-${data.id}-${Date.now()}.json`;
         const filepath = path.join(RECEIVED_DIR, filename);
         
+        // Store metadata only — never write secret values as plaintext to disk
         const credentialData = {
           received_at: new Date().toISOString(),
           from: 'AgentVault',
@@ -54,7 +55,8 @@ const server = http.createServer((req, res) => {
             id: data.id,
             name: data.name,
             service: data.service,
-            value: data.value,
+            encrypted: true,
+            note: 'Secret value not persisted to disk. Re-share from vault when needed.',
             shared_by: data.shared_by || 'user'
           }
         };

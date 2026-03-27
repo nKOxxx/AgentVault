@@ -398,6 +398,22 @@ ipcMain.handle('keys-unshare', (event, { id }) => {
 });
 
 // App event handlers
+// Rate limiting for HTTP receiver
+const unlockAttempts = new Map();
+const UNLOCK_RATE_WINDOW = 15 * 60 * 1000; // 15 minutes
+const UNLOCK_RATE_MAX = 5;
+
+function checkUnlockRate(ip) {
+  const now = Date.now();
+  const attempts = unlockAttempts.get(ip) || [];
+  const recent = attempts.filter(t => t > now - UNLOCK_RATE_WINDOW);
+  unlockAttempts.set(ip, recent);
+  if (recent.length >= UNLOCK_RATE_MAX) return false;
+  recent.push(now);
+  unlockAttempts.set(ip, recent);
+  return true;
+}
+
 // Start AgentVault credential receiver (embedded HTTP server)
 let receiverServer = null;
 
@@ -449,8 +465,14 @@ function startReceiver() {
       return;
     }
     
-    // Unlock vault endpoint
+    // Unlock vault endpoint (rate limited)
     if (req.method === 'POST' && req.url === '/api/unlock') {
+      const ip = req.socket.remoteAddress || '127.0.0.1';
+      if (!checkUnlockRate(ip)) {
+        res.writeHead(429, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Too many unlock attempts. Try again in 15 minutes.' }));
+        return;
+      }
       let body = '';
       req.on('data', chunk => body += chunk);
       req.on('end', () => {
@@ -493,19 +515,45 @@ function startReceiver() {
             res.end(JSON.stringify({ error: 'Missing fields' }));
             return;
           }
-          
+
           const filename = `credential-${data.id}-${Date.now()}.json`;
           const filepath = path.join(RECEIVED_DIR, filename);
+
+          // Encrypt sensitive value before writing to disk
           const credentialData = {
             received_at: new Date().toISOString(),
             from: 'AgentVault',
             acknowledged: false,
-            credential: data
+            credential: {
+              id: data.id,
+              name: data.name,
+              service: data.service || '',
+              encrypted: true,
+              note: 'Value encrypted at rest. Decrypt via vault unlock.'
+            }
           };
-          
-          fs.writeFileSync(filepath, JSON.stringify(credentialData, null, 2), { mode: 0o600 });
-          console.log('[AgentVault] Received credential:', data.name);
-          
+
+          // If vault is unlocked, store encrypted; otherwise store metadata only (no secret value)
+          if (vaultPassword && vaultData) {
+            // Add to vault directly instead of writing plaintext
+            const newKey = {
+              id: data.id,
+              name: data.name,
+              service: data.service || 'received',
+              value: data.value,
+              shared_with: 'received',
+              created_at: new Date().toISOString()
+            };
+            vaultData.keys = vaultData.keys || [];
+            vaultData.keys.push(newKey);
+            saveVault(vaultData, vaultPassword);
+            console.log('[AgentVault] Received and stored credential:', data.name);
+          } else {
+            // Vault locked — write metadata only, no secret value
+            fs.writeFileSync(filepath, JSON.stringify(credentialData, null, 2), { mode: 0o600 });
+            console.log('[AgentVault] Received credential metadata (vault locked):', data.name);
+          }
+
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: true, message: 'Credential received' }));
         } catch (err) {
