@@ -78,6 +78,44 @@ app.use((req, res, next) => {
 // Security: Remove server header
 app.disable('x-powered-by');
 
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws://localhost:* ws://127.0.0.1:*");
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
+
+/**
+ * Validate password strength
+ * @param {string} password
+ * @returns {{ valid: boolean, message: string }}
+ */
+function validatePasswordStrength(password) {
+  if (!password || typeof password !== 'string') {
+    return { valid: false, message: 'Password is required' };
+  }
+  if (password.length < 12) {
+    return { valid: false, message: 'Password must be at least 12 characters' };
+  }
+  if (!/[A-Z]/.test(password)) {
+    return { valid: false, message: 'Password must contain at least one uppercase letter' };
+  }
+  if (!/[a-z]/.test(password)) {
+    return { valid: false, message: 'Password must contain at least one lowercase letter' };
+  }
+  if (!/[0-9]/.test(password)) {
+    return { valid: false, message: 'Password must contain at least one number' };
+  }
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    return { valid: false, message: 'Password must contain at least one special character' };
+  }
+  return { valid: true, message: 'Password meets requirements' };
+}
+
 // Input validation middleware
 function validateInput(fields) {
   return (req, res, next) => {
@@ -404,25 +442,18 @@ function addKey(name, service, url, value) {
 // Get key value (for sharing)
 function getKeyValue(id) {
   return new Promise((resolve, reject) => {
-    console.log(`[getKeyValue] Getting key ${id}, encryptionKey: ${encryptionKey ? 'SET' : 'NULL'}`);
-    
     db.get("SELECT name, service, url, encrypted_value FROM keys WHERE id = ?", [id], (err, row) => {
       if (err) {
-        console.log(`[getKeyValue] DB error: ${err.message}`);
         reject(err);
         return;
       }
       if (!row) {
-        console.log(`[getKeyValue] Key not found: ${id}`);
         reject(new Error('Key not found'));
         return;
       }
-      
-      console.log(`[getKeyValue] Found key: ${row.name}, encrypted_value length: ${row.encrypted_value?.length}`);
-      
+
       try {
         const value = decrypt(row.encrypted_value, encryptionKey);
-        console.log(`[getKeyValue] Decrypted successfully`);
         resolve({
           name: row.name,
           service: row.service,
@@ -430,7 +461,6 @@ function getKeyValue(id) {
           value: value
         });
       } catch (e) {
-        console.log(`[getKeyValue] Decryption failed: ${e.message}`);
         reject(new Error('Decryption failed'));
       }
     });
@@ -622,30 +652,25 @@ wss.on('connection', (ws, req) => {
 // Share key to agent
 async function shareToAgent(keyData, keyId) {
   return new Promise((resolve, reject) => {
-    console.log(`[shareToAgent] Starting share for ${keyData.name}, agentClient: ${agentClient ? 'connected' : 'NULL'}`);
-    
     if (!agentClient) {
-      console.log(`[shareToAgent] REJECTED: No agentClient`);
       reject(new Error('External Agent not connected. Please wait for connection or refresh the page.'));
       return;
     }
-    
+
     // Track pending share
     pendingShares.set(keyId, {
       timestamp: Date.now(),
       retries: 0
     });
-    
+
     const message = JSON.stringify({
       type: 'shared_secret',
       keyId: keyId,
       timestamp: new Date().toISOString(),
       data: keyData
     });
-    
-    console.log(`[shareToAgent] Sending message to client...`);
+
     agentClient.send(message);
-    console.log(`[shareToAgent] Message sent, waiting for confirmation...`);
     
     // Wait for confirmation with timeout
     const checkInterval = setInterval(() => {
@@ -738,8 +763,9 @@ app.get('/api/status', async (req, res) => {
 app.post('/api/init', async (req, res) => {
   try {
     const { password } = req.body;
-    if (!password || password.length < 8) {
-      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    const strength = validatePasswordStrength(password);
+    if (!strength.valid) {
+      return res.status(400).json({ error: strength.message });
     }
     
     await initializeVault(password);
@@ -1005,9 +1031,19 @@ app.get('/api/audit', async (req, res) => {
   }
 });
 
-// Reset - delete all vault data
+// Reset - delete all vault data (requires vault to be unlocked for safety)
 app.post('/api/reset', async (req, res) => {
   try {
+    if (!encryptionKey) {
+      return res.status(401).json({ error: 'Vault must be unlocked to perform reset' });
+    }
+
+    // Log the reset action before clearing
+    logAudit('vault_reset', {
+      action: 'full_reset',
+      timestamp: new Date().toISOString()
+    });
+
     // Close database connection
     db.close();
     
@@ -1028,19 +1064,34 @@ app.post('/api/reset', async (req, res) => {
   }
 });
 
-// LLM Configuration
+// LLM Configuration (requires vault unlocked)
 app.get('/api/config', async (req, res) => {
   try {
+    if (!encryptionKey) {
+      return res.status(401).json({ error: 'Vault locked' });
+    }
+
     db.get("SELECT value FROM vault_meta WHERE key = 'llm_config'", (err, row) => {
       if (err) {
         res.status(500).json({ error: err.message });
         return;
       }
-      
+
       if (row) {
-        res.json(JSON.parse(row.value));
+        try {
+          // Try to decrypt (config is stored encrypted)
+          const decrypted = decrypt(row.value, encryptionKey);
+          res.json(JSON.parse(decrypted));
+        } catch (e) {
+          // Fallback: try parsing as plaintext (legacy data)
+          try {
+            res.json(JSON.parse(row.value));
+          } catch (e2) {
+            res.status(500).json({ error: 'Failed to read configuration' });
+          }
+        }
       } else {
-        // Default config
+        // Default config (no API key stored)
         res.json({
           provider: 'openai',
           model: 'gpt-4',

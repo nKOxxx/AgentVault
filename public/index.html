@@ -126,6 +126,7 @@
           <div class="lock-animation">🔐</div>
           <h2 style="font-size: 20px; margin-bottom: 8px;">Create Your Vault</h2>
           <p style="color: var(--text-muted);">Set a master password to secure your credentials</p>
+          <p style="color: var(--text-muted); font-size: 12px; margin-top: 8px;">🔐 Encrypted with AES-256-GCM &middot; 100,000 PBKDF2 iterations</p>
         </div>
         
         <div class="input-group">
@@ -152,12 +153,14 @@
         </button>
         
         <div class="security-tips">
-          <h4>🔒 Security Tips</h4>
+          <h4>🔒 Password Requirements</h4>
           <ul>
-            <li>Use at least 12 characters</li>
-            <li>Include numbers and symbols</li>
-            <li>Store your password in a safe place</li>
-            <li>We cannot recover lost passwords</li>
+            <li>Minimum 12 characters</li>
+            <li>At least one uppercase letter (A-Z)</li>
+            <li>At least one lowercase letter (a-z)</li>
+            <li>At least one number (0-9)</li>
+            <li>At least one special character (!@#$...)</li>
+            <li>Store your password safely — it cannot be recovered</li>
           </ul>
         </div>
       </div>
@@ -185,23 +188,71 @@
       
       <!-- Vault Screen -->
       <div class="vault-screen" id="vaultScreen">
-        <div class="vault-actions">
-          <button class="btn btn-primary" onclick="openAddModal()">
-            <span>+</span> Add Credential
-          </button>
-          <button class="btn btn-secondary" onclick="lockVault()">
-            <span>🔒</span> Lock
-          </button>
+        <!-- Security status bar -->
+        <div class="security-status-bar" id="securityStatusBar">
+          <div class="status-item" title="Encryption is active — AES-256-GCM">
+            <span class="status-dot active"></span>
+            <span>AES-256-GCM</span>
+          </div>
+          <div class="status-item" title="Auto-lock after 15 minutes of inactivity">
+            <span>⏱</span>
+            <span>Auto-lock: 15m</span>
+          </div>
+          <div class="status-item" id="agentStatus" title="External agent connection status">
+            <span class="status-dot"></span>
+            <span>Agent: —</span>
+          </div>
         </div>
-        
-        <div id="credentialList" class="credential-list">
-          <!-- Credentials loaded here -->
+
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('credentials')" id="tabCredentials">🔑 Credentials</button>
+          <button class="tab" onclick="switchTab('audit')" id="tabAudit">📋 Audit Log</button>
         </div>
-        
-        <div class="empty-state" id="emptyState" style="display: none;">
-          <div class="empty-state-icon">🔑</div>
-          <h3>No credentials yet</h3>
-          <p>Add your first API key or password</p>
+
+        <!-- Credentials Tab -->
+        <div id="credentialsTab">
+          <div class="vault-actions">
+            <button class="btn btn-primary" onclick="openAddModal()" title="Add a new credential (Ctrl+N)">
+              <span>+</span> Add Credential
+            </button>
+            <button class="btn btn-secondary" onclick="lockVault()" title="Lock the vault (Ctrl+L)">
+              <span>🔒</span> Lock
+            </button>
+          </div>
+
+          <div id="credentialList" class="credential-list">
+            <!-- Credentials loaded here -->
+          </div>
+
+          <div class="empty-state" id="emptyState" style="display: none;">
+            <div class="empty-state-icon">🔑</div>
+            <h3>No credentials yet</h3>
+            <p>Add your first API key or password</p>
+            <p style="margin-top: 8px; font-size: 12px; color: var(--text-muted);">Press <kbd>Ctrl+N</kbd> to add a credential</p>
+          </div>
+        </div>
+
+        <!-- Audit Log Tab -->
+        <div id="auditTab" style="display: none;">
+          <div class="vault-actions">
+            <button class="btn btn-secondary" onclick="loadAuditLog()">
+              <span>🔄</span> Refresh
+            </button>
+            <button class="btn btn-secondary" onclick="lockVault()" title="Lock the vault (Ctrl+L)">
+              <span>🔒</span> Lock
+            </button>
+          </div>
+          <div id="auditLogList" class="audit-log-list">
+            <div class="empty-state">
+              <div class="empty-state-icon">📋</div>
+              <h3>Loading audit log...</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Keyboard shortcuts help -->
+        <div class="keyboard-help" id="keyboardHelp">
+          <span title="Keyboard shortcuts available">⌨️ <kbd>Ctrl+N</kbd> Add &middot; <kbd>Ctrl+L</kbd> Lock &middot; <kbd>?</kbd> Help</span>
         </div>
       </div>
     </div>
@@ -295,6 +346,13 @@
     let vaultState = { initialized: false, unlocked: false };
     let credentials = [];
     
+    // Security: Escape HTML to prevent XSS via credential names
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.appendChild(document.createTextNode(text || ''));
+      return div.innerHTML;
+    }
+
     // Initialize
     async function init() {
       await checkStatus();
@@ -337,9 +395,9 @@
       input.addEventListener('input', () => {
         const val = input.value;
         let strength = 0;
-        if (val.length >= 8) strength++;
         if (val.length >= 12) strength++;
-        if (/[A-Z]/.test(val)) strength++;
+        if (val.length >= 16) strength++;
+        if (/[A-Z]/.test(val) && /[a-z]/.test(val)) strength++;
         if (/[0-9]/.test(val)) strength++;
         if (/[^A-Za-z0-9]/.test(val)) strength++;
         
@@ -354,8 +412,12 @@
       const password = document.getElementById('setupPassword').value;
       const confirm = document.getElementById('confirmPassword').value;
       
-      if (!password || password.length < 8) {
-        showToast('Password must be at least 8 characters', 'error');
+      if (!password || password.length < 12) {
+        showToast('Password must be at least 12 characters', 'error');
+        return;
+      }
+      if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+        showToast('Password must include uppercase, lowercase, number, and special character', 'error');
         return;
       }
       if (password !== confirm) {
@@ -474,8 +536,8 @@
           <div class="credential-card">
             <div class="credential-icon">${config.icon}</div>
             <div class="credential-info">
-              <div class="credential-name">${cred.name || service} ${statusBadge}</div>
-              <div class="credential-service">${service}</div>
+              <div class="credential-name">${escapeHtml(cred.name || service)} ${statusBadge}</div>
+              <div class="credential-service">${escapeHtml(service)}</div>
             </div>
             <div class="credential-actions">
               <button class="icon-btn" onclick="copyCredential('${cred.id}')" title="Copy">📋</button>
@@ -670,11 +732,108 @@
       setTimeout(() => toast.remove(), 4000);
     }
     
+    // Tab switching
+    function switchTab(tab) {
+      document.getElementById('credentialsTab').style.display = tab === 'credentials' ? 'block' : 'none';
+      document.getElementById('auditTab').style.display = tab === 'audit' ? 'block' : 'none';
+      document.getElementById('tabCredentials').classList.toggle('active', tab === 'credentials');
+      document.getElementById('tabAudit').classList.toggle('active', tab === 'audit');
+      if (tab === 'audit') loadAuditLog();
+    }
+
+    // Audit log
+    async function loadAuditLog() {
+      try {
+        const res = await fetch('/api/audit?limit=50');
+        const data = await res.json();
+        const logs = data.logs || [];
+        const container = document.getElementById('auditLogList');
+
+        if (logs.length === 0) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><h3>No audit events yet</h3><p>Actions will appear here as you use the vault</p></div>';
+          return;
+        }
+
+        const eventIcons = {
+          key_added: '➕', key_accessed: '👁️', key_shared: '📤', key_unshared: '🔒',
+          key_deleted: '🗑️', key_updated: '✏️', vault_locked: '🔒', vault_unlocked: '🔓',
+          invalid_password: '⚠️', vault_reset: '💥'
+        };
+
+        const eventLabels = {
+          key_added: 'Credential Added', key_accessed: 'Credential Accessed',
+          key_shared: 'Credential Shared', key_unshared: 'Sharing Revoked',
+          key_deleted: 'Credential Deleted', key_updated: 'Credential Updated',
+          vault_locked: 'Vault Locked', vault_unlocked: 'Vault Unlocked',
+          invalid_password: 'Failed Unlock Attempt', vault_reset: 'Vault Reset'
+        };
+
+        container.innerHTML = logs.reverse().map(entry => {
+          const icon = eventIcons[entry.event] || '📝';
+          const label = eventLabels[entry.event] || entry.event;
+          const time = entry.timestamp ? new Date(entry.timestamp).toLocaleString() : 'Unknown';
+          const detail = entry.keyName ? ` — ${escapeHtml(entry.keyName)}` : '';
+          return `<div class="audit-entry"><span class="audit-icon">${icon}</span><div class="audit-details"><div class="audit-event">${escapeHtml(label)}${detail}</div><div class="audit-meta">${escapeHtml(time)}</div></div></div>`;
+        }).join('');
+      } catch (err) {
+        document.getElementById('auditLogList').innerHTML = '<div class="empty-state"><p style="color: var(--error);">Failed to load audit log</p></div>';
+      }
+    }
+
+    // Agent status polling
+    async function updateAgentStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        const el = document.getElementById('agentStatus');
+        if (el) {
+          const dot = el.querySelector('.status-dot');
+          const text = el.querySelector('span:last-child');
+          if (data.connected) {
+            dot.classList.add('connected');
+            text.textContent = 'Agent: Connected';
+          } else {
+            dot.classList.remove('connected');
+            text.textContent = 'Agent: —';
+          }
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // Don't trigger shortcuts when typing in inputs
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+        // Allow Escape to close modals from inputs
+        if (e.key === 'Escape') {
+          closeAddModal();
+        }
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        if (vaultState.unlocked) openAddModal();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+        e.preventDefault();
+        if (vaultState.unlocked) lockVault();
+      }
+      if (e.key === 'Escape') {
+        closeAddModal();
+      }
+    });
+
     // Close modal on overlay click
     document.getElementById('addModal').addEventListener('click', (e) => {
       if (e.target.id === 'addModal') closeAddModal();
     });
-    
+
+    // Poll agent status every 5 seconds when vault is unlocked
+    setInterval(() => {
+      if (vaultState.unlocked) updateAgentStatus();
+    }, 5000);
+
     // Initialize
     init();
   </script>
